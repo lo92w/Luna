@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚔️ أكاديمية الأبطال — نظام المذاكرة RPG</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a14;
+    --bg2: #10101e;
+    --bg3: #151528;
+    --card: #1a1a2e;
+    --card2: #1e1e38;
+    --border: rgba(120,80,255,0.3);
+    --neon1: #7b4fff;
+    --neon2: #ff4fd8;
+    --neon3: #4ff8ff;
+    --neon4: #ffe94f;
+    --neon5: #4fff9a;
+    --neon6: #ff6b4f;
+    --text: #e8e0ff;
+    --text2: #a89ec0;
+    --glow1: 0 0 10px #7b4fff88, 0 0 30px #7b4fff44;
+    --glow2: 0 0 10px #ff4fd888, 0 0 30px #ff4fd844;
+    --glow3: 0 0 10px #4ff8ff88, 0 0 30px #4ff8ff44;
+    --glow4: 0 0 10px #ffe94f88, 0 0 30px #ffe94f44;
+    --glow5: 0 0 10px #4fff9a88, 0 0 30px #4fff9a44;
+    --radius: 16px;
+    --transition: 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  [data-theme="light"] {
+    --bg: #f0eeff;
+    --bg2: #e8e4ff;
+    --bg3: #dfd9ff;
+    --card: #ffffff;
+    --card2: #f5f0ff;
+    --border: rgba(100,60,220,0.25);
+    --text: #1a0a3e;
+    --text2: #5a4a8a;
+  }
+  [data-theme="cyberpunk"] {
+    --bg: #000a08;
+    --bg2: #001510;
+    --bg3: #002018;
+    --card: #001a12;
+    --card2: #002010;
+    --border: rgba(0,255,150,0.3);
+    --neon1: #00ff96;
+    --neon2: #ff006a;
+    --neon3: #00e5ff;
+    --neon4: #ffff00;
+    --neon5: #ff00ff;
+    --neon6: #ff6600;
+    --text: #c0ffe8;
+    --text2: #70c0a0;
+  }
+  [data-theme="sakura"] {
+    --bg: #1a0818;
+    --bg2: #220d1f;
+    --bg3: #2a1226;
+    --card: #2e1228;
+    --card2: #3a1832;
+    --border: rgba(255,100,180,0.3);
+    --neon1: #ff6eb4;
+    --neon2: #ff9de2;
+    --neon3: #c97bff;
+    --neon4: #ffcf6b;
+    --neon5: #6bffce;
+    --neon6: #ff4f6b;
+    --text: #ffe0f5;
+    --text2: #d0a0c0;
+  }
+  [data-theme="ocean"] {
+    --bg: #020b18;
+    --bg2: #041220;
+    --bg3: #061828;
+    --card: #071d30;
+    --card2: #0a2438;
+    --border: rgba(0,180,255,0.3);
+    --neon1: #00b4ff;
+    --neon2: #00ffea;
+    --neon3: #6b8fff;
+    --neon4: #fff06b;
+    --neon5: #00ff8a;
+    --neon6: #ff6b00;
+    --text: #d0f0ff;
+    --text2: #7aafcf;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Tajawal', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background */
+  body::before {
+    content:'';
+    position:fixed;
+    inset:0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(123,79,255,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 30% at 80% 80%, rgba(255,79,216,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(79,248,255,0.04) 0%, transparent 70%);
+    pointer-events:none;
+    z-index:0;
+  }
+
+  /* Floating particles */
+  .particles {
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    z-index:0;
+    overflow:hidden;
+  }
+  .particle {
+    position:absolute;
+    width:2px;
+    height:2px;
+    border-radius:50%;
+    animation: float linear infinite;
+    opacity:0.6;
+  }
+  @keyframes float {
+    0% { transform:translateY(100vh) translateX(0); opacity:0; }
+    10% { opacity:0.6; }
+    90% { opacity:0.6; }
+    100% { transform:translateY(-10px) translateX(var(--drift,0px)); opacity:0; }
+  }
+
+  /* Main Layout */
+  .app { position:relative; z-index:1; max-width:1400px; margin:0 auto; padding:16px; }
+
+  /* Top Bar */
+  .topbar {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+  }
+  .logo {
+    font-family:'Orbitron',sans-serif;
+    font-size:1.1rem;
+    font-weight:900;
+    color:var(--neon1);
+    text-shadow:var(--glow1);
+    letter-spacing:2px;
+    white-space:nowrap;
+  }
+  .logo span { color:var(--neon2); }
+
+  .theme-switcher { display:flex; gap:8px; flex-wrap:wrap; }
+  .theme-btn {
+    padding:6px 14px;
+    border-radius:20px;
+    border:1.5px solid var(--border);
+    background:var(--card);
+    color:var(--text2);
+    font-family:'Tajawal',sans-serif;
+    font-size:0.78rem;
+    cursor:pointer;
+    transition:var(--transition);
+    font-weight:700;
+  }
+  .theme-btn:hover, .theme-btn.active {
+    border-color:var(--neon1);
+    color:var(--neon1);
+    box-shadow:var(--glow1);
+    transform:translateY(-1px);
+  }
+  .dark-toggle {
+    padding:6px 14px;
+    border-radius:20px;
+    border:1.5px solid var(--border);
+    background:var(--card);
+    color:var(--neon3);
+    font-family:'Tajawal',sans-serif;
+    font-size:0.78rem;
+    cursor:pointer;
+    transition:var(--transition);
+    font-weight:700;
+  }
+  .dark-toggle:hover { border-color:var(--neon3); box-shadow:var(--glow3); }
+
+  /* Hero Banner */
+  .hero {
+    background: linear-gradient(135deg, var(--card) 0%, var(--card2) 100%);
+    border:1.5px solid var(--border);
+    border-radius:var(--radius);
+    padding:28px 24px;
+    margin-bottom:20px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero::before {
+    content:'⚔️';
+    position:absolute;
+    left:-10px;
+    top:50%;
+    transform:translateY(-50%);
+    font-size:8rem;
+    opacity:0.06;
+    pointer-events:none;
+  }
+  .hero-title {
+    font-size:clamp(1.4rem,4vw,2.2rem);
+    font-weight:900;
+    background:linear-gradient(135deg, var(--neon1), var(--neon2), var(--neon3));
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+    margin-bottom:8px;
+    line-height:1.3;
+  }
+  .hero-sub {
+    color:var(--text2);
+    font-size:0.95rem;
+    line-height:1.7;
+    max-width:600px;
+  }
+  .hero-badge {
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(123,79,255,0.15);
+    border:1px solid rgba(123,79,255,0.4);
+    border-radius:20px;
+    padding:4px 14px;
+    font-size:0.8rem;
+    color:var(--neon1);
+    margin-top:10px;
+    font-weight:700;
+  }
+
+  /* Player Card */
+  .player-card {
+    background: linear-gradient(135deg, var(--card) 0%, var(--card2) 100%);
+    border:1.5px solid var(--neon1);
+    border-radius:var(--radius);
+    padding:20px;
+    margin-bottom:20px;
+    box-shadow:var(--glow1);
+    position:relative;
+    overflow:hidden;
+  }
+  .player-card::after {
+    content:'';
+    position:absolute;
+    top:0; right:0;
+    width:120px; height:120px;
+    background:radial-gradient(circle at top right, rgba(123,79,255,0.15), transparent 70%);
+    pointer-events:none;
+  }
+  .player-header { display:flex; align-items:center; gap:16px; margin-bottom:16px; flex-wrap:wrap; }
+  .avatar {
+    width:64px; height:64px;
+    border-radius:50%;
+    border:3px solid var(--neon1);
+    box-shadow:var(--glow1);
+    background:linear-gradient(135deg, var(--neon1)33, var(--neon2)33);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:2rem;
+    flex-shrink:0;
+    cursor:pointer;
+    transition:var(--transition);
+  }
+  .avatar:hover { transform:scale(1.05) rotate(5deg); }
+  .player-info h2 {
+    font-size:1.2rem;
+    font-weight:900;
+    color:var(--neon1);
+  }
+  .player-class {
+    font-size:0.82rem;
+    color:var(--neon2);
+    font-weight:700;
+    letter-spacing:1px;
+  }
+  .level-badge {
+    background:linear-gradient(135deg, var(--neon1), var(--neon2));
+    color:#000;
+    font-weight:900;
+    font-size:0.75rem;
+    padding:3px 12px;
+    border-radius:10px;
+    letter-spacing:1px;
+    font-family:'Orbitron',sans-serif;
+  }
+  .player-stats {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(100px,1fr));
+    gap:12px;
+    margin-bottom:16px;
+  }
+  .stat-box {
+    background:var(--bg2);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px;
+    text-align:center;
+  }
+  .stat-val {
+    font-size:1.3rem;
+    font-weight:900;
+    color:var(--neon3);
+    text-shadow:var(--glow3);
+    font-family:'Orbitron',sans-serif;
+  }
+  .stat-label { font-size:0.72rem; color:var(--text2); margin-top:2px; }
+
+  /* XP Bar */
+  .xp-section { margin-bottom:8px; }
+  .xp-label { display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text2); margin-bottom:4px; }
+  .xp-label span:last-child { color:var(--neon4); font-weight:700; }
+  .bar-track {
+    height:12px;
+    background:var(--bg2);
+    border-radius:6px;
+    overflow:hidden;
+    border:1px solid var(--border);
+    position:relative;
+  }
+  .bar-fill {
+    height:100%;
+    border-radius:6px;
+    transition:width 1s cubic-bezier(0.4,0,0.2,1);
+    position:relative;
+    overflow:hidden;
+  }
+  .bar-fill::after {
+    content:'';
+    position:absolute;
+    top:0; left:-100%;
+    width:60%;
+    height:100%;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation:shimmer 2s infinite;
+  }
+  @keyframes shimmer { 0%{left:-100%} 100%{left:200%} }
+  .xp-bar { background:linear-gradient(90deg, var(--neon1), var(--neon2)); }
+  .verbal-bar { background:linear-gradient(90deg, var(--neon3), var(--neon1)); }
+  .quant-bar { background:linear-gradient(90deg, var(--neon5), var(--neon3)); }
+  .coins-bar { background:linear-gradient(90deg, var(--neon4), var(--neon6)); }
+
+  /* Currency Row */
+  .currency-row {
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:12px;
+  }
+  .currency-chip {
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:var(--bg2);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:6px 14px;
+    font-size:0.85rem;
+    font-weight:700;
+    transition:var(--transition);
+  }
+  .currency-chip:hover { border-color:var(--neon4); box-shadow:var(--glow4); }
+  .currency-chip .icon { font-size:1.1rem; }
+  .chip-val { color:var(--neon4); }
+  .chip-label { color:var(--text2); font-size:0.75rem; }
+
+  /* Streak */
+  .streak-card {
+    background:linear-gradient(135deg, rgba(255,79,216,0.12), rgba(123,79,255,0.08));
+    border:1.5px solid var(--neon2);
+    border-radius:var(--radius);
+    padding:16px 20px;
+    margin-bottom:20px;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    box-shadow:var(--glow2);
+    flex-wrap:wrap;
+  }
+  .streak-flame { font-size:2.5rem; animation:pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.1)} }
+  .streak-info h3 { font-size:1.1rem; font-weight:900; color:var(--neon2); }
+  .streak-info p { font-size:0.82rem; color:var(--text2); margin-top:3px; }
+  .streak-days {
+    margin-right:auto;
+    text-align:center;
+  }
+  .streak-num {
+    font-size:2.2rem;
+    font-weight:900;
+    color:var(--neon2);
+    font-family:'Orbitron',sans-serif;
+    text-shadow:var(--glow2);
+    line-height:1;
+  }
+  .streak-num-label { font-size:0.72rem; color:var(--text2); }
+
+  /* Tabs */
+  .tabs {
+    display:flex;
+    gap:8px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+  }
+  .tab {
+    padding:9px 18px;
+    border-radius:10px;
+    border:1.5px solid var(--border);
+    background:var(--card);
+    color:var(--text2);
+    font-family:'Tajawal',sans-serif;
+    font-size:0.85rem;
+    font-weight:700;
+    cursor:pointer;
+    transition:var(--transition);
+  }
+  .tab:hover { border-color:var(--neon1); color:var(--neon1); }
+  .tab.active {
+    background:linear-gradient(135deg, var(--neon1)22, var(--neon2)11);
+    border-color:var(--neon1);
+    color:var(--neon1);
+    box-shadow:var(--glow1);
+  }
+
+  /* Tab Content */
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+
+  /* Section Heading */
+  .section-title {
+    font-size:1.1rem;
+    font-weight:900;
+    color:var(--neon1);
+    margin-bottom:14px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .section-title::after {
+    content:'';
+    flex:1;
+    height:1px;
+    background:linear-gradient(90deg, var(--neon1)44, transparent);
+  }
+
+  /* Grid */
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:16px; }
+  .grid3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
+
+  /* World Cards */
+  .world-card {
+    background: linear-gradient(135deg, var(--card), var(--card2));
+    border:1.5px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px;
+    transition:var(--transition);
+    cursor:pointer;
+    position:relative;
+    overflow:hidden;
+  }
+  .world-card:hover {
+    border-color:var(--neon1);
+    transform:translateY(-3px);
+    box-shadow:var(--glow1);
+  }
+  .world-card.locked { opacity:0.5; cursor:not-allowed; }
+  .world-card.locked:hover { transform:none; box-shadow:none; border-color:var(--border); }
+  .world-card.boss { border-color:var(--neon6); }
+  .world-card.boss:hover { box-shadow:0 0 15px var(--neon6)88; }
+  .world-card.completed { border-color:var(--neon5); }
+  .world-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .world-emoji { font-size:1.8rem; }
+  .world-name { font-size:0.95rem; font-weight:900; }
+  .world-type {
+    font-size:0.7rem;
+    padding:2px 8px;
+    border-radius:8px;
+    font-weight:700;
+    margin-right:auto;
+  }
+  .type-verbal { background:rgba(79,248,255,0.15); color:var(--neon3); border:1px solid rgba(79,248,255,0.3); }
+  .type-quant { background:rgba(79,255,154,0.15); color:var(--neon5); border:1px solid rgba(79,255,154,0.3); }
+  .type-foundation { background:rgba(123,79,255,0.15); color:var(--neon1); border:1px solid rgba(123,79,255,0.3); }
+  .type-boss { background:rgba(255,107,79,0.15); color:var(--neon6); border:1px solid rgba(255,107,79,0.3); }
+  .world-desc { font-size:0.78rem; color:var(--text2); margin-bottom:10px; line-height:1.6; }
+  .world-progress { margin-top:8px; }
+  .world-progress .bar-track { height:8px; margin-top:4px; }
+  .progress-label { display:flex; justify-content:space-between; font-size:0.72rem; color:var(--text2); }
+  .progress-pct { color:var(--neon5); font-weight:700; }
+  .lock-icon { position:absolute; top:12px; left:12px; font-size:1.2rem; }
+  .completed-badge {
+    position:absolute;
+    top:10px; left:10px;
+    background:var(--neon5);
+    color:#000;
+    font-size:0.65rem;
+    font-weight:900;
+    padding:2px 8px;
+    border-radius:8px;
+  }
+  .boss-hp {
+    display:flex;
+    align-items:center;
+    gap:6px;
+    margin-top:8px;
+    font-size:0.75rem;
+    color:var(--neon6);
+    font-weight:700;
+  }
+  .boss-hp-bar { flex:1; height:6px; background:var(--bg2); border-radius:3px; overflow:hidden; }
+  .boss-hp-fill { height:100%; background:linear-gradient(90deg, var(--neon6), var(--neon4)); border-radius:3px; }
+
+  /* Quest Cards */
+  .quest-card {
+    background:var(--card);
+    border:1.5px solid var(--border);
+    border-radius:var(--radius);
+    padding:16px;
+    transition:var(--transition);
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+  }
+  .quest-card:hover { border-color:var(--neon1); box-shadow:var(--glow1); }
+  .quest-card.done { border-color:var(--neon5); opacity:0.7; }
+  .quest-check {
+    width:24px; height:24px;
+    border-radius:6px;
+    border:2px solid var(--neon1);
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:var(--transition);
+    margin-top:2px;
+  }
+  .quest-check:hover { background:rgba(123,79,255,0.3); transform:scale(1.1); }
+  .quest-check.checked { background:var(--neon5); border-color:var(--neon5); }
+  .quest-check.checked::after { content:'✓'; color:#000; font-size:0.8rem; font-weight:900; }
+  .quest-body { flex:1; }
+  .quest-title { font-size:0.9rem; font-weight:700; margin-bottom:3px; }
+  .quest-desc { font-size:0.75rem; color:var(--text2); line-height:1.5; }
+  .quest-rewards { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .reward-chip {
+    display:inline-flex;
+    align-items:center;
+    gap:3px;
+    font-size:0.7rem;
+    font-weight:700;
+    padding:2px 8px;
+    border-radius:8px;
+  }
+  .r-xp { background:rgba(123,79,255,0.2); color:var(--neon1); }
+  .r-coin { background:rgba(255,233,79,0.2); color:var(--neon4); }
+  .r-gem { background:rgba(255,79,216,0.2); color:var(--neon2); }
+  .r-crystal { background:rgba(79,248,255,0.2); color:var(--neon3); }
+
+  /* Achievement Cards */
+  .ach-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px; }
+  .ach-card {
+    background:var(--card);
+    border:1.5px solid var(--border);
+    border-radius:14px;
+    padding:14px 12px;
+    text-align:center;
+    transition:var(--transition);
+    cursor:default;
+    position:relative;
+    overflow:hidden;
+  }
+  .ach-card:hover { transform:translateY(-2px); }
+  .ach-card.unlocked { border-color:var(--neon4); box-shadow:var(--glow4); }
+  .ach-card.rare { border-color:var(--neon2); }
+  .ach-card.rare.unlocked { box-shadow:var(--glow2); }
+  .ach-card.legendary { border-color:var(--neon6); }
+  .ach-card.legendary.unlocked { box-shadow:0 0 15px var(--neon6)88; }
+  .ach-icon { font-size:2.2rem; margin-bottom:6px; display:block; }
+  .ach-card.locked .ach-icon { filter:grayscale(1); opacity:0.3; }
+  .ach-name { font-size:0.8rem; font-weight:700; margin-bottom:3px; }
+  .ach-card.locked .ach-name { color:var(--text2); }
+  .ach-desc { font-size:0.68rem; color:var(--text2); line-height:1.4; }
+  .ach-rarity {
+    position:absolute;
+    top:6px;
+    right:6px;
+    font-size:0.58rem;
+    font-weight:900;
+    padding:1px 5px;
+    border-radius:5px;
+    letter-spacing:0.5px;
+  }
+  .rarity-common { background:rgba(160,160,160,0.2); color:#aaa; }
+  .rarity-rare { background:rgba(255,79,216,0.2); color:var(--neon2); }
+  .rarity-epic { background:rgba(123,79,255,0.2); color:var(--neon1); }
+  .rarity-legendary { background:rgba(255,107,79,0.2); color:var(--neon6); }
+
+  /* Shop */
+  .shop-card {
+    background:var(--card);
+    border:1.5px solid var(--border);
+    border-radius:var(--radius);
+    padding:16px;
+    text-align:center;
+    transition:var(--transition);
+  }
+  .shop-card:hover { border-color:var(--neon4); transform:translateY(-3px); box-shadow:var(--glow4); }
+  .shop-icon { font-size:2.5rem; margin-bottom:8px; display:block; }
+  .shop-name { font-size:0.88rem; font-weight:700; margin-bottom:4px; }
+  .shop-desc { font-size:0.72rem; color:var(--text2); margin-bottom:10px; line-height:1.5; }
+  .shop-price {
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    background:rgba(255,233,79,0.15);
+    border:1px solid rgba(255,233,79,0.4);
+    border-radius:20px;
+    padding:4px 14px;
+    font-size:0.8rem;
+    font-weight:900;
+    color:var(--neon4);
+    cursor:pointer;
+    transition:var(--transition);
+  }
+  .shop-price:hover { background:rgba(255,233,79,0.3); transform:scale(1.05); }
+
+  /* Schedule Table */
+  .schedule-table { width:100%; border-collapse:collapse; }
+  .schedule-table th, .schedule-table td {
+    padding:10px 14px;
+    text-align:right;
+    border-bottom:1px solid var(--border);
+    font-size:0.82rem;
+  }
+  .schedule-table th {
+    background:var(--card2);
+    color:var(--neon1);
+    font-weight:900;
+    font-size:0.78rem;
+    letter-spacing:0.5px;
+  }
+  .schedule-table tr:hover td { background:rgba(123,79,255,0.06); }
+  .schedule-table td:first-child { font-weight:700; color:var(--neon3); font-family:'Orbitron',sans-serif; font-size:0.75rem; }
+  .day-boss td { color:var(--neon6) !important; }
+  .day-boss td:first-child { color:var(--neon6) !important; }
+  .schedule-wrap {
+    background:var(--card);
+    border:1.5px solid var(--border);
+    border-radius:var(--radius);
+    overflow:hidden;
+    overflow-x:auto;
+  }
+
+  /* Level Map */
+  .level-path {
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .level-item {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:var(--card);
+    border:1.5px solid var(--border);
+    border-radius:12px;
+    padding:12px 16px;
+    transition:var(--transition);
+  }
+  .level-item:hover { border-color:var(--neon1); box-shadow:var(--glow1); }
+  .level-item.current { border-color:var(--neon1); background:rgba(123,79,255,0.1); box-shadow:var(--glow1); }
+  .level-item.done { border-color:var(--neon5); opacity:0.8; }
+  .level-circle {
+    width:44px; height:44px;
+    border-radius:50%;
+    border:2px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Orbitron',sans-serif;
+    font-size:0.85rem;
+    font-weight:700;
+    flex-shrink:0;
+    color:var(--neon1);
+  }
+  .level-item.current .level-circle { border-color:var(--neon1); background:rgba(123,79,255,0.2); box-shadow:var(--glow1); animation:pulse 2s infinite; }
+  .level-item.done .level-circle { border-color:var(--neon5); background:rgba(79,255,154,0.15); color:var(--neon5); }
+  .level-info { flex:1; }
+  .level-name { font-size:0.88rem; font-weight:700; }
+  .level-req { font-size:0.72rem; color:var(--text2); margin-top:2px; }
+  .level-reward { font-size:0.75rem; color:var(--neon4); margin-top:2px; font-weight:700; }
+
+  /* Notification Toast */
+  .toast {
+    position:fixed;
+    top:80px;
+    right:20px;
+    background:linear-gradient(135deg, var(--neon1), var(--neon2));
+    color:#000;
+    padding:12px 20px;
+    border-radius:12px;
+    font-weight:700;
+    font-size:0.85rem;
+    z-index:1000;
+    display:none;
+    animation:slideIn 0.4s ease;
+    box-shadow:0 0 20px var(--neon1)88;
+    max-width:280px;
+  }
+  @keyframes slideIn { from{transform:translateX(120%)} to{transform:translateX(0)} }
+
+  /* Story Section */
+  .story-box {
+    background:linear-gradient(135deg, var(--card), var(--card2));
+    border:1.5px solid var(--neon1);
+    border-radius:var(--radius);
+    padding:24px;
+    margin-bottom:20px;
+    position:relative;
+    box-shadow:var(--glow1);
+  }
+  .story-box .quote {
+    font-size:0.95rem;
+    line-height:1.9;
+    color:var(--text);
+    font-style:italic;
+  }
+  .story-box .quote strong { color:var(--neon2); font-style:normal; }
+  .story-narrator {
+    margin-top:12px;
+    font-size:0.75rem;
+    color:var(--neon3);
+    font-weight:700;
+  }
+
+  /* Info Cards */
+  .info-card {
+    background:var(--card);
+    border:1.5px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px;
+  }
+  .info-card h4 {
+    font-size:0.9rem;
+    font-weight:900;
+    color:var(--neon1);
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .info-card ul {
+    list-style:none;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .info-card li {
+    display:flex;
+    align-items:flex-start;
+    gap:8px;
+    font-size:0.8rem;
+    color:var(--text2);
+    line-height:1.5;
+  }
+  .info-card li::before {
+    content:'▸';
+    color:var(--neon1);
+    flex-shrink:0;
+    margin-top:1px;
+  }
+  .info-card li strong { color:var(--text); }
+
+  /* Penalty box */
+  .penalty-box {
+    background:rgba(255,107,79,0.08);
+    border:1.5px solid rgba(255,107,79,0.4);
+    border-radius:var(--radius);
+    padding:18px;
+  }
+  .penalty-box h4 { color:var(--neon6); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-track { background:var(--bg2); }
+  ::-webkit-scrollbar-thumb { background:var(--neon1)66; border-radius:3px; }
+
+  /* Responsive */
+  @media(max-width:600px) {
+    .topbar { flex-direction:column; align-items:flex-start; }
+    .player-stats { grid-template-columns:repeat(3,1fr); }
+    .ach-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
+  }
+
+  /* Loot Box */
+  .loot-box {
+    background:linear-gradient(135deg, rgba(255,233,79,0.08), rgba(255,107,79,0.08));
+    border:2px solid var(--neon4);
+    border-radius:var(--radius);
+    padding:20px;
+    text-align:center;
+    cursor:pointer;
+    transition:var(--transition);
+    box-shadow:var(--glow4);
+    position:relative;
+    overflow:hidden;
+  }
+  .loot-box:hover { transform:translateY(-4px) scale(1.02); box-shadow:0 0 30px var(--neon4)88; }
+  .loot-box::before {
+    content:'✨';
+    position:absolute;
+    font-size:5rem;
+    opacity:0.05;
+    top:50%;left:50%;
+    transform:translate(-50%,-50%);
+  }
+  .loot-icon { font-size:3rem; margin-bottom:8px; animation:bounce 1s ease infinite; }
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  .loot-name { font-size:0.9rem; font-weight:900; color:var(--neon4); }
+  .loot-cost { font-size:0.75rem; color:var(--text2); margin-top:4px; }
+
+  /* XP table */
+  .xp-table { width:100%; border-collapse:collapse; }
+  .xp-table td { padding:8px 12px; border-bottom:1px solid var(--border); font-size:0.82rem; }
+  .xp-table tr:hover td { background:rgba(123,79,255,0.06); }
+  .xp-table td:first-child { font-size:1.2rem; }
+  .xp-table td:last-child { color:var(--neon4); font-weight:700; font-family:'Orbitron',sans-serif; font-size:0.75rem; }
+  .xp-table td:nth-child(2) { font-weight:700; }
+
+  .highlight-box {
+    background:linear-gradient(135deg, rgba(123,79,255,0.1), rgba(255,79,216,0.08));
+    border:1px solid rgba(123,79,255,0.3);
+    border-radius:10px;
+    padding:12px 16px;
+    margin:12px 0;
+    font-size:0.82rem;
+    color:var(--text2);
+    line-height:1.7;
+  }
+  .highlight-box strong { color:var(--neon1); }
+
+  /* animated glow ring */
+  @keyframes glowRing {
+    0%,100% { box-shadow: 0 0 10px var(--neon1)44; }
+    50% { box-shadow: 0 0 25px var(--neon1)88, 0 0 50px var(--neon1)33; }
+  }
+  .glow-ring { animation: glowRing 3s ease-in-out infinite; }
+
+  /* boss warning */
+  .boss-warning {
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:rgba(255,107,79,0.12);
+    border:1px solid rgba(255,107,79,0.5);
+    border-radius:8px;
+    padding:4px 10px;
+    font-size:0.7rem;
+    color:var(--neon6);
+    font-weight:700;
+    animation:pulse 2s infinite;
+  }
+</style>
+</head>
+<body data-theme="dark">
+
+<div class="particles" id="particles"></div>
+<div class="toast" id="toast"></div>
+
+<div class="app">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="logo">⚔️ QUEST<span>ACADEMY</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <div class="theme-switcher">
+        <button class="theme-btn active" onclick="setTheme('dark',this)">🌌 نيون</button>
+        <button class="theme-btn" onclick="setTheme('cyberpunk',this)">🟢 سايبر</button>
+        <button class="theme-btn" onclick="setTheme('sakura',this)">🌸 ساكورا</button>
+        <button class="theme-btn" onclick="setTheme('ocean',this)">🌊 أوشن</button>
+      </div>
+      <button class="dark-toggle" onclick="toggleLight(this)">☀️ فاتح</button>
+    </div>
+  </div>
+
+  <!-- HERO BANNER -->
+  <div class="hero">
+    <div class="hero-title">🏆 أكاديمية الأبطال — رحلة اختبار القدرات</div>
+    <div class="hero-sub">
+      أنتِ لستِ مجرد طالبة تذاكر — أنتِ <strong style="color:var(--neon2)">بطلة تصعد مستوياتها</strong> في عالم من التحديات والإنجازات. كل قسم تكمليه = خبرة، كل يوم تواظبي فيه = نار، كل هدف تحققيه = أسطورة.
+    </div>
+    <div class="hero-badge">⭐ رحلة 20 يوم | 318 مهمة | المستوى النهائي: أسطورة القدرات</div>
+  </div>
+
+  <!-- PLAYER CARD -->
+  <div class="player-card glow-ring">
+    <div class="player-header">
+      <div class="avatar" onclick="cycleAvatar(this)" title="اضغطي لتغيير الأفتار">⚔️</div>
+      <div class="player-info">
+        <h2>البطلة المجهولة</h2>
+        <div class="player-class">✨ طالبة القدرات | فئة: المحاربة الأكاديمية</div>
+        <div style="margin-top:6px;"><span class="level-badge">LVL 1 — المبتدئة</span></div>
+      </div>
+    </div>
+
+    <div class="player-stats">
+      <div class="stat-box"><div class="stat-val" id="totalXP">0</div><div class="stat-label">⭐ XP الكلي</div></div>
+      <div class="stat-box"><div class="stat-val" id="coins">0</div><div class="stat-label">💰 الذهب</div></div>
+      <div class="stat-box"><div class="stat-val" id="gems">0</div><div class="stat-label">💎 الجواهر</div></div>
+      <div class="stat-box"><div class="stat-val" id="crystals">0</div><div class="stat-label">🔮 الكريستال</div></div>
+      <div class="stat-box"><div class="stat-val" id="completedCount">0</div><div class="stat-label">✅ مكتمل</div></div>
+      <div class="stat-box"><div class="stat-val" id="levelNum">1</div><div class="stat-label">🏆 المستوى</div></div>
+    </div>
+
+    <div class="xp-section">
+      <div class="xp-label"><span>⭐ تقدم المستوى</span><span id="xpProgress">0 / 500 XP</span></div>
+      <div class="bar-track"><div class="bar-fill xp-bar" id="xpBar" style="width:0%"></div></div>
+    </div>
+
+    <div style="margin-top:10px;">
+      <div class="xp-label"><span>📚 اللفظي (220)</span><span id="verbalPct">0%</span></div>
+      <div class="bar-track"><div class="bar-fill verbal-bar" id="verbalBar" style="width:0%"></div></div>
+    </div>
+    <div style="margin-top:8px;">
+      <div class="xp-label"><span>🔢 الكمي (90)</span><span id="quantPct">0%</span></div>
+      <div class="bar-track"><div class="bar-fill quant-bar" id="quantBar" style="width:0%"></div></div>
+    </div>
+
+    <div class="currency-row">
+      <div class="currency-chip"><span class="icon">💰</span><span class="chip-val" id="coinsChip">0</span><span class="chip-label">ذهب</span></div>
+      <div class="currency-chip"><span class="icon">💎</span><span class="chip-val" id="gemsChip">0</span><span class="chip-label">جوهر</span></div>
+      <div class="currency-chip"><span class="icon">🔮</span><span class="chip-val" id="crystalsChip">0</span><span class="chip-label">كريستال</span></div>
+      <div class="currency-chip"><span class="icon">🌟</span><span class="chip-val" id="starsChip">0</span><span class="chip-label">نجمة</span></div>
+    </div>
+  </div>
+
+  <!-- STREAK -->
+  <div class="streak-card">
+    <div class="streak-flame">🔥</div>
+    <div class="streak-info">
+      <h3>سلسلة الأيام المتتالية</h3>
+      <p>حافظي على المذاكرة يومياً لبناء سلسلتك الأسطورية</p>
+    </div>
+    <div class="streak-days">
+      <div class="streak-num" id="streakNum">0</div>
+      <div class="streak-num-label">يوم</div>
+    </div>
+    <button onclick="addStreak()" style="padding:8px 18px;border-radius:10px;border:1.5px solid var(--neon2);background:transparent;color:var(--neon2);font-family:'Tajawal',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;transition:var(--transition);" onmouseover="this.style.background='rgba(255,79,216,0.2)'" onmouseout="this.style.background='transparent'">
+      ✅ سجّلي اليوم
+    </button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('story',this)">📖 القصة</button>
+    <button class="tab" onclick="showTab('worlds',this)">🌍 العوالم</button>
+    <button class="tab" onclick="showTab('quests',this)">📋 المهام</button>
+    <button class="tab" onclick="showTab('achievements',this)">🏆 الإنجازات</button>
+    <button class="tab" onclick="showTab('shop',this)">🛒 المتجر</button>
+    <button class="tab" onclick="showTab('schedule',this)">📅 الجدول</button>
+    <button class="tab" onclick="showTab('levels',this)">📈 المستويات</button>
+    <button class="tab" onclick="showTab('rules',this)">📜 القواعد</button>
+  </div>
+
+  <!-- ==================== TAB: STORY ==================== -->
+  <div class="tab-panel active" id="tab-story">
+    <div class="story-box">
+      <div class="quote">
+        في عالم <strong>أكاديمية Nexus</strong>، يُقال أن من تجتاز <strong>بوابة القدرات الكبرى</strong> ستُمنح لقب <strong>"أسطورة الأكاديمية"</strong> — أعلى لقب يمكن أن ينله إنسان.<br><br>
+        أنتِ، <strong>البطلة الجديدة</strong>، وصلتِ أخيراً إلى أبواب الأكاديمية. أمامكِ <strong>8 حصون للتأسيس</strong> تحتاجين فتحها أولاً، ثم <strong>12 عالماً</strong> مليئاً بالتحديات والأسرار. الطريق طويل، لكن كل خطوة تجعلكِ أقوى.<br><br>
+        الأساطير لا تُولد، بل <strong>تُصنع — بالمثابرة، يوماً بيوم.</strong>
+      </div>
+      <div class="story-narrator">— مروية أكاديمية Nexus، اليوم الأول</div>
+    </div>
+
+    <div class="grid2">
+      <div class="info-card">
+        <h4>⚔️ نظام العملات</h4>
+        <ul>
+          <li><strong>💰 الذهب (Gold):</strong> عملة أساسية تحصلين عليها بإكمال الأقسام. تُستخدم في المتجر.</li>
+          <li><strong>💎 الجواهر (Gems):</strong> عملة نادرة من مهام الإنجازات والتحديات الكبرى.</li>
+          <li><strong>🔮 الكريستال (Crystals):</strong> تُعطى عند هزيمة الزعماء وإكمال العوالم.</li>
+          <li><strong>🌟 النجوم (Stars):</strong> لكل يوم مواظبة على الدراسة. تتراكم وتُحول لمكافآت.</li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <h4>⭐ نظام XP</h4>
+        <table class="xp-table">
+          <tr><td>🏰</td><td>درس تأسيس</td><td>+150 XP | +50💰 | +2💎</td></tr>
+          <tr><td>📖</td><td>قسم لفظي</td><td>+30 XP | +10💰 | +0.5💎</td></tr>
+          <tr><td>🔢</td><td>قسم كمي</td><td>+40 XP | +15💰 | +1💎</td></tr>
+          <tr><td>⚔️</td><td>هزيمة زعيم</td><td>+300 XP | +100💰 | +5💎 | +3🔮</td></tr>
+          <tr><td>🔥</td><td>يوم مواظبة (Streak)</td><td>+50 XP | +20💰 | +1🌟</td></tr>
+          <tr><td>📋</td><td>مهمة يومية</td><td>+80 XP | +30💰</td></tr>
+          <tr><td>📅</td><td>مهمة أسبوعية</td><td>+400 XP | +150💰 | +3💎</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TAB: WORLDS ==================== -->
+  <div class="tab-panel" id="tab-worlds">
+    <div class="section-title">🌍 خريطة عالم أكاديمية Nexus</div>
+
+    <div class="highlight-box">
+      🗺️ <strong>ترتيب الرحلة:</strong> ابدئي بـ <strong>قلعة التأسيس (8 دروس)</strong> أولاً، ثم انتقلي للعوالم المختلطة بين اللفظي والكمي لكسر الرتابة وتحقيق أقصى تقدم!
+    </div>
+
+    <div class="grid2" id="worldsGrid">
+      <!-- Worlds generated by JS -->
+    </div>
+  </div>
+
+  <!-- ==================== TAB: QUESTS ==================== -->
+  <div class="tab-panel" id="tab-quests">
+    <div class="section-title">⚡ المهام اليومية — Daily Quests</div>
+    <div id="dailyQuests" style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;"></div>
+
+    <div class="section-title">📅 المهام الأسبوعية — Weekly Quests</div>
+    <div id="weeklyQuests" style="display:flex;flex-direction:column;gap:10px;"></div>
+  </div>
+
+  <!-- ==================== TAB: ACHIEVEMENTS ==================== -->
+  <div class="tab-panel" id="tab-achievements">
+    <div class="section-title">🏆 إنجازاتك — Achievements</div>
+    <div style="margin-bottom:12px;">
+      <span id="achCount" style="color:var(--neon4);font-weight:700;font-size:0.9rem;">0 / 40 مفتوح</span>
+    </div>
+    <div class="ach-grid" id="achievementsGrid"></div>
+  </div>
+
+  <!-- ==================== TAB: SHOP ==================== -->
+  <div class="tab-panel" id="tab-shop">
+    <div class="section-title">🛒 متجر المكافآت</div>
+    <div class="highlight-box" style="margin-bottom:16px;">
+      💰 رصيدك الحالي: <strong id="shopBalance">0 ذهب | 0 جوهر | 0 كريستال</strong> — اشتري مكافأة حقيقية تمنحيها لنفسك!
+    </div>
+
+    <div class="section-title" style="font-size:0.85rem;">📦 صناديق الغنائم — Loot Boxes</div>
+    <div class="grid3" style="margin-bottom:20px;" id="lootBoxes"></div>
+
+    <div class="section-title" style="font-size:0.85rem;">🎁 متجر المكافآت الحقيقية</div>
+    <div class="grid3" id="shopItems"></div>
+  </div>
+
+  <!-- ==================== TAB: SCHEDULE ==================== -->
+  <div class="tab-panel" id="tab-schedule">
+    <div class="section-title">📅 جدول الـ 20 يوم الأسطوري</div>
+    <div class="highlight-box" style="margin-bottom:16px;">
+      📊 <strong>التوزيع الكلي:</strong> 8 دروس تأسيس × 150XP + 220 لفظي × 30XP + 90 كمي × 40XP = <strong style="color:var(--neon4)">11,800 XP</strong> عند الإكمال الكامل 🎯
+    </div>
+    <div class="schedule-wrap">
+      <table class="schedule-table" id="scheduleTable"></table>
+    </div>
+  </div>
+
+  <!-- ==================== TAB: LEVELS ==================== -->
+  <div class="tab-panel" id="tab-levels">
+    <div class="section-title">📈 خريطة المستويات</div>
+    <div class="level-path" id="levelsPath"></div>
+  </div>
+
+  <!-- ==================== TAB: RULES ==================== -->
+  <div class="tab-panel" id="tab-rules">
+    <div class="grid2">
+      <div class="info-card">
+        <h4>🔥 نظام السلسلة (Streak)</h4>
+        <ul>
+          <li><strong>3 أيام متتالية:</strong> +2💎 مكافأة + شارة "تشتعل"</li>
+          <li><strong>7 أيام:</strong> +5💎 + 50💰 + صندوق نادر</li>
+          <li><strong>14 يوم:</strong> +10💎 + 100💰 + صندوق ملحمي</li>
+          <li><strong>20 يوم (كامل):</strong> +20💎 + 500💰 + لقب "أسطورة النار" + صندوق أسطوري</li>
+        </ul>
+      </div>
+      <div class="penalty-box info-card">
+        <h4>⚠️ عقوبات كسر السلسلة</h4>
+        <ul>
+          <li><strong>يوم واحد غائب:</strong> تخسرين -10💰 من الرصيد + تنكسر السلسلة.</li>
+          <li><strong>يومان متتاليان:</strong> تخسرين -1💎 + يُعاد ضبط سلسلة Streak إلى 0.</li>
+          <li><strong>3 أيام:</strong> -50 XP من رصيدك ✦ تحذير: "اليأس ليس خياراً!"</li>
+          <li><strong>القاعدة الذهبية:</strong> العقوبة دائماً أقل مما ستخسرينه من فرص الربح. لا عقوبة تُدمّر تقدمك!</li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <h4>💡 نصائح لمذاكرة RPG فعّالة</h4>
+        <ul>
+          <li>ابدئي كل جلسة بـ <strong>"تهيئة البطلة"</strong>: موسيقى + تحديد هدف الجلسة.</li>
+          <li>استخدمي مؤقت <strong>Pomodoro</strong>: 25 دقيقة مذاكرة، 5 دقائق استراحة.</li>
+          <li>سجّلي ما أكملتيه في هذا النظام مباشرة لتشعري بالتقدم فوراً.</li>
+          <li>كل 3 أقسام تكملينها = <strong>حلوى أو مكافأة صغيرة</strong> لنفسك.</li>
+          <li>في الأيام الصعبة: مهمة واحدة فقط تكفي — لا تكسري السلسلة!</li>
+        </ul>
+      </div>
+      <div class="info-card">
+        <h4>🎮 العناصر الأسطورية النادرة</h4>
+        <ul>
+          <li><strong>💠 الكريستال الملحمي:</strong> يُمنح فقط عند إكمال عالم كامل بلا انقطاع.</li>
+          <li><strong>👑 تاج الزعيم:</strong> يُمنح لمن تهزم جميع الـ 5 زعماء.</li>
+          <li><strong>🌈 الدرع المقدسة:</strong> تحصلين عليها بـ 10 أيام streak متتالية.</li>
+          <li><strong>⚡ حجر البرق:</strong> يُكسبكِ ضعف XP ليوم واحد — تحصلين عليه بإنجاز أسبوعي.</li>
+          <li><strong>🎴 بطاقة الأسطورة:</strong> إنجاز سري يُمنح لمن تكمل كل شيء قبل اليوم 20.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end app -->
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  xp: 0,
+  coins: 0,
+  gems: 0,
+  crystals: 0,
+  stars: 0,
+  streak: 0,
+  level: 1,
+  verbalDone: 0,
+  quantDone: 0,
+  foundationDone: 0,
+  completedTotal: 0,
+  questsDone: {},
+  achDone: {},
+  lastStreakDate: null,
+};
+
+const VERBAL_TOTAL = 220;
+const QUANT_TOTAL = 90;
+const FOUND_TOTAL = 8;
+
+const LEVELS = [
+  {num:1,name:"المبتدئة",xp:0,req:0,reward:"تبدئين رحلتك ✨"},
+  {num:2,name:"المستيقظة",xp:500,req:500,reward:"+20💰 + شارة البداية"},
+  {num:3,name:"الباحثة",xp:1200,req:700,reward:"+1💎 + عنوان جديد"},
+  {num:4,name:"المتدربة",xp:2200,req:1000,reward:"+2💎 + صندوق عادي"},
+  {num:5,name:"المحاربة",xp:3500,req:1300,reward:"+50💰 + شارة المحاربة 🗡️"},
+  {num:6,name:"الرامية",xp:5000,req:1500,reward:"+3💎 + صندوق نادر"},
+  {num:7,name:"الساحرة",xp:6800,req:1800,reward:"+1🔮 + شارة الساحرة"},
+  {num:8,name:"الأميرة",xp:8800,req:2000,reward:"+100💰 + 2🔮"},
+  {num:9,name:"الفارسة",xp:11200,req:2400,reward:"+5💎 + صندوق ملحمي"},
+  {num:10,name:"أسطورة القدرات",xp:14000,req:2800,reward:"🎴 بطاقة الأسطورة + 👑 + جميع الإنجازات"},
+];
+
+// ============================================================
+// WORLDS DATA
+// ============================================================
+const WORLDS = [
+  {id:"w0",emoji:"🏰",name:"قلعة التأسيس",type:"foundation",desc:"الحصن الأول. أتقني 8 دروس التأسيس قبل أي شيء. هنا تُبنى الأسس التي تحملك للنصر.",total:8,done:0,color:"var(--neon1)"},
+  {id:"w1",emoji:"🌲",name:"غابة الحروف الأولى",type:"verbal",desc:"30 قسماً لفظياً بين أشجار الكلمات. ابدئي هنا بعد التأسيس.",total:30,done:0,color:"var(--neon3)"},
+  {id:"w2",emoji:"🔢",name:"معبد الأرقام",type:"quant",desc:"20 قسماً كمياً في معبد قديم. الأرقام هي السلاح الأقوى.",total:20,done:0,color:"var(--neon5)"},
+  {id:"wb1",emoji:"💀",name:"⚔️ الزعيم الأول: ساحر الألغاز",type:"boss",desc:"هزيمته تتطلب: 30 لفظي + 20 كمي + 3 تأسيس مكتملة. مكافأة: +300XP +5💎 +3🔮",total:1,done:0,color:"var(--neon6)"},
+  {id:"w3",emoji:"🏜️",name:"صحراء الاستنتاج",type:"verbal",desc:"40 قسماً لفظياً. الرياح تحمل أسرار اللغة عبر رمال الاستنتاج.",total:40,done:0,color:"var(--neon3)"},
+  {id:"w4",emoji:"🌊",name:"بحر المعادلات",type:"quant",desc:"25 قسماً كمياً في أعماق البحر. الموجات الرياضية تستدعي المنطق.",total:25,done:0,color:"var(--neon5)"},
+  {id:"wb2",emoji:"🐉",name:"⚔️ الزعيم الثاني: التنين الأحمر",type:"boss",desc:"هزيمته تتطلب: 70 لفظي + 45 كمي مكتملة. مكافأة: +300XP +5💎 +3🔮",total:1,done:0,color:"var(--neon6)"},
+  {id:"w5",emoji:"⛰️",name:"جبال التحليل",type:"verbal",desc:"50 قسماً لفظياً عند قمم الجبال. التحليل الدقيق هو المفتاح.",total:50,done:0,color:"var(--neon3)"},
+  {id:"w6",emoji:"⚙️",name:"مصنع الرياضيات",type:"quant",desc:"25 قسماً كمياً في مصنع الذكاء الرياضي. الآلة لا تُخطئ.",total:25,done:0,color:"var(--neon5)"},
+  {id:"wb3",emoji:"🦁",name:"⚔️ الزعيم الثالث: أسد الإحصاء",type:"boss",desc:"هزيمته تتطلب: 120 لفظي + 70 كمي مكتملة. مكافأة: +300XP +5💎 +3🔮",total:1,done:0,color:"var(--neon6)"},
+  {id:"w7",emoji:"🌌",name:"مجرة الخيال اللغوي",type:"verbal",desc:"50 قسماً لفظياً في أعماق الكون. النجوم تتحدث بالكلمات.",total:50,done:0,color:"var(--neon3)"},
+  {id:"w8",emoji:"🔮",name:"برج الكميات الكونية",type:"quant",desc:"20 قسماً كمياً في برج الأسرار. الكميات الكونية لا حدود لها.",total:20,done:0,color:"var(--neon5)"},
+  {id:"wb4",emoji:"🌑",name:"⚔️ الزعيم الرابع: إمبراطور الكميات",type:"boss",desc:"هزيمته تتطلب: 170 لفظي + 90 كمي مكتملة. مكافأة: +300XP +5💎 +3🔮",total:1,done:0,color:"var(--neon6)"},
+  {id:"w9",emoji:"🏆",name:"قصر الإتقان",type:"verbal",desc:"50 قسماً لفظياً — المعركة الأخيرة في عالم اللغة. النصر على بُعد خطوة!",total:50,done:0,color:"var(--neon3)"},
+  {id:"wb5",emoji:"👑",name:"⚔️ الزعيم الأخير: ملك القدرات",type:"boss",desc:"معركة الحسم! تتطلب: جميع الأقسام مكتملة تقريباً. مكافأة: +1000XP + لقب الأسطورة 👑",total:1,done:0,color:"var(--neon4)"},
+];
+
+// ============================================================
+// DAILY QUESTS
+// ============================================================
+const DAILY_QUESTS = [
+  {id:"dq1",title:"📚 المحاربة اليومية",desc:"أكملي 10 أقسام (لفظي أو كمي) في يوم واحد",rewards:{xp:80,coins:30}},
+  {id:"dq2",title:"⚡ الصاروخ",desc:"أكملي 15 قسماً في جلسة واحدة مستمرة",rewards:{xp:120,coins:50,gems:1}},
+  {id:"dq3",title:"🌅 الفجر المبكر",desc:"ابدئي المذاكرة قبل الساعة 8 صباحاً",rewards:{xp:60,coins:25}},
+  {id:"dq4",title:"🎯 الضربة المزدوجة",desc:"أكملي 5 كمي + 5 لفظي في نفس اليوم",rewards:{xp:90,coins:35,gems:1}},
+  {id:"dq5",title:"🌙 المحارب الليلي",desc:"أكملي مراجعة سريعة قبل النوم",rewards:{xp:50,coins:20}},
+  {id:"dq6",title:"🔥 الإنجاز السريع",desc:"أكملي درس تأسيس كامل في يوم واحد",rewards:{xp:150,coins:60,gems:2}},
+];
+
+// ============================================================
+// WEEKLY QUESTS
+// ============================================================
+const WEEKLY_QUESTS = [
+  {id:"wq1",title:"🌟 أسبوع التأسيس",desc:"أكملي 3 دروس تأسيس في أسبوع واحد",rewards:{xp:400,coins:150,gems:3}},
+  {id:"wq2",title:"⚔️ المحاربة الأسبوعية",desc:"أكملي 50 قسماً (لفظي أو كمي) في 7 أيام",rewards:{xp:500,coins:200,gems:4,crystals:1}},
+  {id:"wq3",title:"🏆 سلسلة الـ 7",desc:"حافظي على streak 7 أيام متتالية",rewards:{xp:300,coins:100,gems:5}},
+  {id:"wq4",title:"💎 ملكة الكمي",desc:"أكملي 25 قسماً كمياً في أسبوع",rewards:{xp:400,coins:160,gems:3,crystals:1}},
+  {id:"wq5",title:"📖 سلطانة اللفظي",desc:"أكملي 60 قسماً لفظياً في أسبوع",rewards:{xp:500,coins:200,gems:4}},
+];
+
+// ============================================================
+// ACHIEVEMENTS
+// ============================================================
+const ACHIEVEMENTS = [
+  // Common
+  {id:"a1",emoji:"🌱",name:"البداية",desc:"أكملي قسمك الأول",rarity:"common",cond:()=>state.completedTotal>=1},
+  {id:"a2",emoji:"🔥",name:"3 أيام نار",desc:"streak 3 أيام",rarity:"common",cond:()=>state.streak>=3},
+  {id:"a3",emoji:"📚",name:"10 أقسام",desc:"أكملي 10 أقسام",rarity:"common",cond:()=>state.completedTotal>=10},
+  {id:"a4",emoji:"💰",name:"أول 100 ذهب",desc:"اجمعي 100 ذهب",rarity:"common",cond:()=>state.coins>=100},
+  {id:"a5",emoji:"⭐",name:"أول 500 XP",desc:"اجمعي 500 XP",rarity:"common",cond:()=>state.xp>=500},
+  {id:"a6",emoji:"🎯",name:"دقيقة الأرقام",desc:"أكملي 5 أقسام كمية",rarity:"common",cond:()=>state.quantDone>=5},
+  {id:"a7",emoji:"📖",name:"عاشقة الكلمات",desc:"أكملي 10 أقسام لفظية",rarity:"common",cond:()=>state.verbalDone>=10},
+  {id:"a8",emoji:"🏰",name:"أول حصن",desc:"أكملي درس تأسيس واحد",rarity:"common",cond:()=>state.foundationDone>=1},
+  // Rare
+  {id:"a9",emoji:"💎",name:"جوهرة نادرة",desc:"اجمعي 5 جواهر",rarity:"rare",cond:()=>state.gems>=5},
+  {id:"a10",emoji:"⚡",name:"صاعقة",desc:"أكملي 20 قسماً في يوم",rarity:"rare",cond:()=>false},
+  {id:"a11",emoji:"🌟",name:"نجم الأسبوع",desc:"streak 7 أيام",rarity:"rare",cond:()=>state.streak>=7},
+  {id:"a12",emoji:"🗡️",name:"المحاربة",desc:"أكملي 50 قسماً",rarity:"rare",cond:()=>state.completedTotal>=50},
+  {id:"a13",emoji:"🏹",name:"الرامية",desc:"أكملي 30 كمي",rarity:"rare",cond:()=>state.quantDone>=30},
+  {id:"a14",emoji:"📜",name:"حكيمة القصص",desc:"أكملي 50 لفظي",rarity:"rare",cond:()=>state.verbalDone>=50},
+  {id:"a15",emoji:"🛡️",name:"الدرع البنفسجية",desc:"أكملي 4 دروس تأسيس",rarity:"rare",cond:()=>state.foundationDone>=4},
+  {id:"a16",emoji:"🌈",name:"الدرع المقدسة",desc:"streak 10 أيام",rarity:"rare",cond:()=>state.streak>=10},
+  {id:"a17",emoji:"💫",name:"فضية الخبرة",desc:"اجمعي 3000 XP",rarity:"rare",cond:()=>state.xp>=3000},
+  {id:"a18",emoji:"🦋",name:"التحول",desc:"بلغي المستوى 5",rarity:"rare",cond:()=>state.level>=5},
+  // Epic
+  {id:"a19",emoji:"🔮",name:"ساحرة الكريستال",desc:"اجمعي 3 كريستال",rarity:"epic",cond:()=>state.crystals>=3},
+  {id:"a20",emoji:"👸",name:"أميرة الأرقام",desc:"أكملي 60 كمي",rarity:"epic",cond:()=>state.quantDone>=60},
+  {id:"a21",emoji:"🌺",name:"ملكة الألفاظ",desc:"أكملي 120 لفظي",rarity:"epic",cond:()=>state.verbalDone>=120},
+  {id:"a22",emoji:"🏆",name:"ملكة التأسيس",desc:"أكملي جميع 8 دروس التأسيس",rarity:"epic",cond:()=>state.foundationDone>=8},
+  {id:"a23",emoji:"⚔️",name:"قاتلة الزعيم",desc:"اهزمي أول زعيم",rarity:"epic",cond:()=>false},
+  {id:"a24",emoji:"🌠",name:"نجم متلألئ",desc:"streak 14 يوم",rarity:"epic",cond:()=>state.streak>=14},
+  {id:"a25",emoji:"💍",name:"خاتم القوة",desc:"بلغي المستوى 7",rarity:"epic",cond:()=>state.level>=7},
+  {id:"a26",emoji:"🎯",name:"الضربة المئوية",desc:"أكملي 100 قسم",rarity:"epic",cond:()=>state.completedTotal>=100},
+  {id:"a27",emoji:"🦅",name:"عقاب الأكاديمية",desc:"اجمعي 5000 XP",rarity:"epic",cond:()=>state.xp>=5000},
+  {id:"a28",emoji:"🌊",name:"أمواج لا تهدأ",desc:"أكملي 7 أقسام يومياً لـ 5 أيام",rarity:"epic",cond:()=>false},
+  // Legendary
+  {id:"a29",emoji:"👑",name:"ملكة القدرات",desc:"أكملي جميع 318 قسم ودرس",rarity:"legendary",cond:()=>state.completedTotal>=318},
+  {id:"a30",emoji:"🎴",name:"بطاقة الأسطورة",desc:"أكملي كل شيء قبل اليوم 20",rarity:"legendary",cond:()=>false},
+  {id:"a31",emoji:"🔱",name:"إلهة Nexus",desc:"بلغي المستوى 10",rarity:"legendary",cond:()=>state.level>=10},
+  {id:"a32",emoji:"🌟",name:"نجمة ساطعة",desc:"streak 20 يوم كامل",rarity:"legendary",cond:()=>state.streak>=20},
+  {id:"a33",emoji:"💠",name:"الكريستال الأسطوري",desc:"اجمعي 10 كريستال",rarity:"legendary",cond:()=>state.crystals>=10},
+  {id:"a34",emoji:"⚡",name:"حجر البرق",desc:"أكملي 50 قسماً في 3 أيام",rarity:"legendary",cond:()=>false},
+  {id:"a35",emoji:"🌌",name:"ملكة المجرة",desc:"اجمعي 10,000 XP",rarity:"legendary",cond:()=>state.xp>=10000},
+  {id:"a36",emoji:"🐉",name:"مروّضة التنين",desc:"اهزمي جميع الزعماء الخمسة",rarity:"legendary",cond:()=>false},
+  {id:"a37",emoji:"🏅",name:"ذهبية الكمي",desc:"أكملي جميع 90 كمي",rarity:"legendary",cond:()=>state.quantDone>=90},
+  {id:"a38",emoji:"📕",name:"موسوعة الألفاظ",desc:"أكملي جميع 220 لفظي",rarity:"legendary",cond:()=>state.verbalDone>=220},
+  {id:"a39",emoji:"🌙",name:"ساهرة الليل",desc:"10 مرات مذاكرة مسائية",rarity:"legendary",cond:()=>false},
+  {id:"a40",emoji:"🎆",name:"الأمة الأسطورية",desc:"جمعي كل الجواهر 20+ وكل الكريستال 10+",rarity:"legendary",cond:()=>state.gems>=20&&state.crystals>=10},
+];
+
+// ============================================================
+// SHOP DATA
+// ============================================================
+const LOOT_BOXES = [
+  {emoji:"📦",name:"صندوق عادي",desc:"يحتوي على XP وذهب عشوائي",cost:"50💰",price:50,type:"gold"},
+  {emoji:"🎁",name:"صندوق نادر",desc:"يحتوي على جوهرة + XP",cost:"3💎",price:3,type:"gems"},
+  {emoji:"💎",name:"صندوق ملحمي",desc:"جواهر + كريستال + XP كبير",cost:"5💎 + 2🔮",price:5,type:"gems"},
+  {emoji:"🌟",name:"صندوق أسطوري",desc:"مكافآت خرافية — نادر جداً!",cost:"5🔮",price:5,type:"crystals"},
+];
+
+const SHOP_ITEMS = [
+  {emoji:"☕",name:"كوب قهوة أو كاكاو",desc:"مكافأة دافئة بعد جلسة مذاكرة مجتهدة",cost:"80💰",price:80},
+  {emoji:"🍫",name:"شوكولاتة فاخرة",desc:"حلاوة مكتسبة من التعب",cost:"100💰",price:100},
+  {emoji:"🛁",name:"حمام استرخاء",desc:"جلسة راحة كاملة بعد يوم شاق",cost:"150💰",price:150},
+  {emoji:"🎮",name:"ساعة ألعاب حرة",desc:"العب ما تشائين لساعة كاملة بلا ذنب",cost:"200💰",price:200},
+  {emoji:"🎬",name:"فيلم أو حلقة أنمي",desc:"مكافأة المشاهدة المستحقة",cost:"120💰",price:120},
+  {emoji:"🍕",name:"وجبة مفضلة",desc:"اطلبي طلبك المفضل دون تفكير",cost:"250💰",price:250},
+  {emoji:"💅",name:"جلسة عناية",desc:"مانيكير أو سبا أو قناع",cost:"300💰",price:300},
+  {emoji:"🛍️",name:"تسوق صغير",desc:"شيء صغير تشتريه لنفسك",cost:"400💰",price:400},
+  {emoji:"📱",name:"يوم خالٍ من الدراسة",desc:"إجازة مكتسبة — فقط للبطلات!",cost:"500💰",price:500},
+  {emoji:"🌃",name:"نزهة سهرة",desc:"خروج ممتع مع الأصدقاء",cost:"8💎",price:8,type:"gems"},
+  {emoji:"🎁",name:"هدية لنفسك",desc:"هدية حقيقية تختارينها أنتِ!",cost:"15💎",price:15,type:"gems"},
+  {emoji:"👑",name:"جلسة سبا فاخرة",desc:"المكافأة الكبرى للبطلة الأسطورية",cost:"5🔮",price:5,type:"crystals"},
+];
+
+// ============================================================
+// SCHEDULE
+// ============================================================
+const SCHEDULE = [
+  {day:"01",label:"اليوم 1",tasks:"🏰 تأسيس 1+2 + 8 لفظي",xp:540,note:"البداية القوية!"},
+  {day:"02",label:"اليوم 2",tasks:"🏰 تأسيس 3+4 + 10 لفظي",xp:600,note:"استمري!"},
+  {day:"03",label:"اليوم 3",tasks:"🏰 تأسيس 5+6 + 8 لفظي + 5 كمي",xp:740,note:"أنتِ تشتعلين 🔥"},
+  {day:"04",label:"اليوم 4",tasks:"🏰 تأسيس 7+8 + 10 كمي",xp:700,note:"التأسيس مكتمل! 🎉"},
+  {day:"05",label:"اليوم 5 ⚔️",tasks:"🌲 غابة الحروف: 20 لفظي + تحدي الزعيم الأول",xp:900,note:"أول زعيم! استعدي 🐲",boss:true},
+  {day:"06",label:"اليوم 6",tasks:"🌲 غابة الحروف: 20 لفظي + 5 كمي",xp:750,note:"العالم الأول يكتمل!"},
+  {day:"07",label:"اليوم 7",tasks:"🔢 معبد الأرقام: 15 كمي + 10 لفظي",xp:900,note:"Streak 7 أيام 🌟"},
+  {day:"08",label:"اليوم 8",tasks:"🏜️ صحراء الاستنتاج: 20 لفظي + 10 كمي",xp:1000,note:"نصف الطريق يقترب"},
+  {day:"09",label:"اليوم 9",tasks:"🏜️ صحراء الاستنتاج: 20 لفظي + 10 كمي",xp:1000,note:"استمري بالوتيرة"},
+  {day:"10",label:"اليوم 10 ⚔️",tasks:"🌊 بحر المعادلات: 15 كمي + تحدي الزعيم الثاني",xp:975,note:"نصف المسافة! زعيم ثانٍ 👑",boss:true},
+  {day:"11",label:"اليوم 11",tasks:"🌊 بحر المعادلات: 10 كمي + 15 لفظي",xp:850,note:"المرحلة الوسطى"},
+  {day:"12",label:"اليوم 12",tasks:"⛰️ جبال التحليل: 25 لفظي",xp:750,note:"اللفظي يتسارع!"},
+  {day:"13",label:"اليوم 13",tasks:"⛰️ جبال التحليل: 25 لفظي",xp:750,note:""},
+  {day:"14",label:"اليوم 14 ⚔️",tasks:"⚙️ مصنع الرياضيات: 15 كمي + زعيم ثالث",xp:1125,note:"Streak 14 + زعيم! 🔥",boss:true},
+  {day:"15",label:"اليوم 15",tasks:"⚙️ مصنع الرياضيات: 10 كمي + 20 لفظي",xp:1000,note:"أقل من أسبوع!"},
+  {day:"16",label:"اليوم 16",tasks:"🌌 مجرة الخيال: 25 لفظي",xp:750,note:"الكون اللغوي"},
+  {day:"17",label:"اليوم 17",tasks:"🌌 مجرة الخيال: 25 لفظي + 10 كمي",xp:1150,note:""},
+  {day:"18",label:"اليوم 18 ⚔️",tasks:"🔮 برج الكميات: 20 كمي + زعيم رابع",xp:1100,note:"نهاية الكمي! 🎯",boss:true},
+  {day:"19",label:"اليوم 19",tasks:"🏆 قصر الإتقان: 25 لفظي",xp:750,note:"اليوم قبل الأخير"},
+  {day:"20",label:"اليوم 20 👑",tasks:"🏆 قصر الإتقان: 25 لفظي + زعيم أخير = 🎉 المستوى 10",xp:2050,note:"النصر الكامل! أسطورة القدرات 🎆",boss:true},
+];
+
+// ============================================================
+// INIT
+// ============================================================
+const avatars = ["⚔️","🌸","⭐","💎","🔮","🦋","👑","🌙","🌺","🌟"];
+let avatarIdx = 0;
+
+function cycleAvatar(el) {
+  avatarIdx = (avatarIdx+1) % avatars.length;
+  el.textContent = avatars[avatarIdx];
+  showToast("تغيير الأفتار! "+avatars[avatarIdx]);
+}
+
+// Particles
+(function() {
+  const p = document.getElementById('particles');
+  const colors = ['#7b4fff','#ff4fd8','#4ff8ff','#ffe94f','#4fff9a'];
+  for(let i=0;i<30;i++){
+    const d = document.createElement('div');
+    d.className='particle';
+    d.style.cssText=`left:${Math.random()*100}%;bottom:-10px;background:${colors[i%5]};animation-duration:${6+Math.random()*8}s;animation-delay:${Math.random()*8}s;--drift:${(Math.random()-0.5)*100}px;`;
+    p.appendChild(d);
+  }
+})();
+
+// Render Worlds
+function renderWorlds() {
+  const g = document.getElementById('worldsGrid');
+  g.innerHTML = WORLDS.map(w => {
+    const pct = w.total>1 ? Math.round((w.done/w.total)*100) : (w.done?100:0);
+    const isBoss = w.type==='boss';
+    const locked = false;
+    const typeClass = {'verbal':'type-verbal','quant':'type-quant','foundation':'type-foundation','boss':'type-boss'}[w.type]||'';
+    const typeLabel = {'verbal':'لفظي','quant':'كمي','foundation':'تأسيس','boss':'⚔️ زعيم'}[w.type]||'';
+    return `<div class="world-card ${isBoss?'boss':''}" onclick="clickWorld('${w.id}')">
+      <div class="world-header">
+        <span class="world-emoji">${w.emoji}</span>
+        <div>
+          <div class="world-name">${w.name}</div>
+          <span class="world-type ${typeClass}">${typeLabel}</span>
+        </div>
+      </div>
+      <div class="world-desc">${w.desc}</div>
+      ${isBoss?`<div class="boss-hp"><span>🩸 HP الزعيم</span><div class="boss-hp-bar"><div class="boss-hp-fill" style="width:100%"></div></div></div>`:
+      `<div class="world-progress">
+        <div class="progress-label"><span>${w.done}/${w.total}</span><span class="progress-pct">${pct}%</span></div>
+        <div class="bar-track"><div class="bar-fill ${w.type==='verbal'?'verbal-bar':w.type==='quant'?'quant-bar':'xp-bar'}" style="width:${pct}%"></div></div>
+      </div>`}
+    </div>`;
+  }).join('');
+}
+
+function clickWorld(id) {
+  const w = WORLDS.find(x=>x.id===id);
+  if(!w) return;
+  if(w.type==='boss') {
+    showToast("⚔️ زعيم! أكملي المتطلبات ثم سجّلي الانتصار!");
+    return;
+  }
+  if(w.done < w.total) {
+    w.done++;
+    if(w.type==='verbal') { state.verbalDone++; gainXP(30,10,0.5,0); }
+    else if(w.type==='quant') { state.quantDone++; gainXP(40,15,1,0); }
+    else if(w.type==='foundation') { state.foundationDone++; gainXP(150,50,2,0); }
+    state.completedTotal++;
+    updateUI();
+    renderWorlds();
+    showToast(`+${w.type==='foundation'?150:w.type==='quant'?40:30} XP ✨ ${w.emoji} قسم مكتمل!`);
+  } else {
+    showToast("✅ هذا العالم مكتمل! أنتِ أسطورة 🌟");
+  }
+}
+
+// Render Quests
+function renderQuests() {
+  const dq = document.getElementById('dailyQuests');
+  dq.innerHTML = DAILY_QUESTS.map(q => {
+    const done = state.questsDone[q.id];
+    return `<div class="quest-card ${done?'done':''}">
+      <div class="quest-check ${done?'checked':''}" onclick="toggleQuest('${q.id}')"></div>
+      <div class="quest-body">
+        <div class="quest-title">${q.title}</div>
+        <div class="quest-desc">${q.desc}</div>
+        <div class="quest-rewards">
+          <span class="reward-chip r-xp">⭐ +${q.rewards.xp} XP</span>
+          <span class="reward-chip r-coin">💰 +${q.rewards.coins}</span>
+          ${q.rewards.gems?`<span class="reward-chip r-gem">💎 +${q.rewards.gems}</span>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const wq = document.getElementById('weeklyQuests');
+  wq.innerHTML = WEEKLY_QUESTS.map(q => {
+    const done = state.questsDone[q.id];
+    return `<div class="quest-card ${done?'done':''}">
+      <div class="quest-check ${done?'checked':''}" onclick="toggleQuest('${q.id}')"></div>
+      <div class="quest-body">
+        <div class="quest-title">${q.title}</div>
+        <div class="quest-desc">${q.desc}</div>
+        <div class="quest-rewards">
+          <span class="reward-chip r-xp">⭐ +${q.rewards.xp} XP</span>
+          <span class="reward-chip r-coin">💰 +${q.rewards.coins}</span>
+          ${q.rewards.gems?`<span class="reward-chip r-gem">💎 +${q.rewards.gems}</span>`:''}
+          ${q.rewards.crystals?`<span class="reward-chip r-crystal">🔮 +${q.rewards.crystals}</span>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleQuest(id) {
+  const all = [...DAILY_QUESTS,...WEEKLY_QUESTS];
+  const q = all.find(x=>x.id===id);
+  if(!q) return;
+  if(state.questsDone[id]) return;
+  state.questsDone[id] = true;
+  gainXP(q.rewards.xp, q.rewards.coins, q.rewards.gems||0, q.rewards.crystals||0);
+  updateUI();
+  renderQuests();
+  showToast(`🎯 مهمة مكتملة! +${q.rewards.xp}XP +${q.rewards.coins}💰`);
+}
+
+// Render Achievements
+function renderAchievements() {
+  const g = document.getElementById('achievementsGrid');
+  let unlocked = 0;
+  g.innerHTML = ACHIEVEMENTS.map(a => {
+    const done = state.achDone[a.id] || a.cond();
+    if(done && !state.achDone[a.id]) { state.achDone[a.id]=true; }
+    if(done) unlocked++;
+    const rarMap = {common:'rarity-common',rare:'rarity-rare',epic:'rarity-epic',legendary:'rarity-legendary'};
+    const rarLabel = {common:'عادي',rare:'نادر',epic:'ملحمي',legendary:'أسطوري'};
+    return `<div class="ach-card ${done?'unlocked':''} ${a.rarity}" title="${a.desc}">
+      <span class="ach-rarity ${rarMap[a.rarity]}">${rarLabel[a.rarity]}</span>
+      <span class="ach-icon ${done?'':'locked'}">${a.emoji}</span>
+      <div class="ach-name">${a.name}</div>
+      <div class="ach-desc">${done?a.desc:'???'}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('achCount').textContent = `${unlocked} / ${ACHIEVEMENTS.length} مفتوح`;
+}
+
+// Render Shop
+function renderShop() {
+  document.getElementById('shopBalance').textContent = `${state.coins} ذهب | ${state.gems} جوهر | ${state.crystals} كريستال`;
+  document.getElementById('lootBoxes').innerHTML = LOOT_BOXES.map(b=>
+    `<div class="loot-box" onclick="buyLoot('${b.name}',${b.price},'${b.type||'gold'}')">
+      <div class="loot-icon">${b.emoji}</div>
+      <div class="loot-name">${b.name}</div>
+      <div class="loot-cost">${b.desc}</div>
+      <div style="margin-top:8px;font-size:0.8rem;color:var(--neon4);font-weight:700;">${b.cost}</div>
+    </div>`
+  ).join('');
+
+  document.getElementById('shopItems').innerHTML = SHOP_ITEMS.map(i=>
+    `<div class="shop-card">
+      <span class="shop-icon">${i.emoji}</span>
+      <div class="shop-name">${i.name}</div>
+      <div class="shop-desc">${i.desc}</div>
+      <span class="shop-price" onclick="buyItem('${i.name}',${i.price},'${i.type||'gold'}')">${i.cost} — اشتري</span>
+    </div>`
+  ).join('');
+}
+
+function buyItem(name, price, type) {
+  if(type==='gold' && state.coins>=price){ state.coins-=price; showToast(`🎁 اشتريتِ: ${name}! استمتعي بها 💕`); updateUI(); renderShop(); }
+  else if(type==='gems' && state.gems>=price){ state.gems-=price; showToast(`💎 اشتريتِ: ${name}! مكافأة أسطورية 👑`); updateUI(); renderShop(); }
+  else if(type==='crystals' && state.crystals>=price){ state.crystals-=price; showToast(`🔮 اشتريتِ: ${name}! تستحقين 🌟`); updateUI(); renderShop(); }
+  else { showToast("💸 عملتك غير كافية — ذاكري أكثر! 🔥"); }
+}
+function buyLoot(name,price,type){
+  if(type==='gold' && state.coins>=price){ state.coins-=price; const r=Math.floor(Math.random()*200)+50; state.xp+=r; showToast(`📦 ${name} — حصلتِ على +${r} XP!`); updateUI(); renderShop(); }
+  else if(type==='gems' && state.gems>=price){ state.gems-=price; const r=Math.floor(Math.random()*3)+1; state.gems+=r; state.xp+=300; showToast(`🎁 ${name} — +${r}💎 +300XP!`); updateUI(); renderShop(); }
+  else if(type==='crystals' && state.crystals>=price){ state.crystals-=price; state.xp+=1000; state.coins+=200; showToast(`🌟 الصندوق الأسطوري — +1000XP +200💰!`); updateUI(); renderShop(); }
+  else { showToast("💸 عملتك غير كافية!"); }
+}
+
+// Render Schedule
+function renderSchedule() {
+  const t = document.getElementById('scheduleTable');
+  t.innerHTML = `<thead><tr><th>اليوم</th><th>المهام</th><th>XP المتوقع</th><th>ملاحظات</th></tr></thead>
+  <tbody>${SCHEDULE.map(r=>`<tr class="${r.boss?'day-boss':''}">
+    <td>${r.day}</td><td>${r.tasks}</td><td>+${r.xp}</td><td>${r.note||''}</td>
+  </tr>`).join('')}</tbody>`;
+}
+
+// Render Levels
+function renderLevels() {
+  const p = document.getElementById('levelsPath');
+  p.innerHTML = LEVELS.map(l=>{
+    const current = state.level===l.num;
+    const done = state.level>l.num;
+    return `<div class="level-item ${current?'current':''} ${done?'done':''}">
+      <div class="level-circle">${done?'✓':l.num}</div>
+      <div class="level-info">
+        <div class="level-name">${l.name}</div>
+        <div class="level-req">يتطلب: ${l.xp.toLocaleString()} XP</div>
+        <div class="level-reward">🎁 ${l.reward}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Gain XP
+function gainXP(xp, coins, gems, crystals) {
+  state.xp += xp;
+  state.coins += Math.floor(coins);
+  state.gems += gems;
+  state.crystals += crystals;
+  state.stars = Math.floor(state.xp / 200);
+  checkLevel();
+  checkAchievements();
+}
+
+function checkLevel() {
+  for(let i=LEVELS.length-1;i>=0;i--){
+    if(state.xp >= LEVELS[i].xp && state.level < LEVELS[i].num){
+      state.level = LEVELS[i].num;
+      showToast(`🎉 LEVEL UP! المستوى ${LEVELS[i].num}: ${LEVELS[i].name} 🚀`);
+    }
+  }
+}
+
+function checkAchievements() {
+  ACHIEVEMENTS.forEach(a => {
+    if(!state.achDone[a.id] && a.cond()) {
+      state.achDone[a.id]=true;
+      setTimeout(()=>showToast(`🏆 إنجاز مفتوح: ${a.emoji} ${a.name}!`),500);
+    }
+  });
+}
+
+function addStreak() {
+  state.streak++;
+  gainXP(50,20,0,0);
+  state.stars++;
+  updateUI();
+  showToast(`🔥 Streak ${state.streak} يوم! +50XP +20💰 🌟`);
+  if(state.streak===3){setTimeout(()=>showToast("🏆 3 أيام متتالية! +2💎 مكافأة!"),1000); state.gems+=2; updateUI();}
+  if(state.streak===7){setTimeout(()=>showToast("🌟 7 أيام! +5💎 + صندوق نادر!"),1000); state.gems+=5; updateUI();}
+}
+
+// Update UI
+function updateUI() {
+  document.getElementById('totalXP').textContent = state.xp.toLocaleString();
+  document.getElementById('coins').textContent = state.coins.toLocaleString();
+  document.getElementById('gems').textContent = state.gems;
+  document.getElementById('crystals').textContent = state.crystals;
+  document.getElementById('starsChip').textContent = state.stars;
+  document.getElementById('coinsChip').textContent = state.coins.toLocaleString();
+  document.getElementById('gemsChip').textContent = state.gems;
+  document.getElementById('crystalsChip').textContent = state.crystals;
+  document.getElementById('completedCount').textContent = state.completedTotal;
+  document.getElementById('levelNum').textContent = state.level;
+  document.getElementById('streakNum').textContent = state.streak;
+
+  // XP Bar
+  const curLvl = LEVELS.find(l=>l.num===state.level) || LEVELS[0];
+  const nextLvl = LEVELS.find(l=>l.num===state.level+1);
+  const xpInLvl = state.xp - curLvl.xp;
+  const xpNeeded = nextLvl ? nextLvl.xp - curLvl.xp : 1;
+  const pct = nextLvl ? Math.min(100,(xpInLvl/xpNeeded)*100) : 100;
+  document.getElementById('xpBar').style.width = pct+'%';
+  document.getElementById('xpProgress').textContent = `${state.xp.toLocaleString()} / ${(nextLvl?nextLvl.xp:curLvl.xp).toLocaleString()} XP`;
+
+  const vPct = Math.round((state.verbalDone/VERBAL_TOTAL)*100);
+  document.getElementById('verbalBar').style.width = vPct+'%';
+  document.getElementById('verbalPct').textContent = vPct+'%';
+
+  const qPct = Math.round((state.quantDone/QUANT_TOTAL)*100);
+  document.getElementById('quantBar').style.width = qPct+'%';
+  document.getElementById('quantPct').textContent = qPct+'%';
+
+  renderAchievements();
+  renderLevels();
+  renderShop();
+}
+
+// Tabs
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+
+// Theme
+function setTheme(theme, btn) {
+  const body = document.body;
+  const wasLight = body.dataset.theme === 'light';
+  body.dataset.theme = theme;
+  document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+}
+function toggleLight(btn) {
+  const body = document.body;
+  if(body.dataset.theme === 'light') {
+    body.dataset.theme = 'dark';
+    btn.textContent = '☀️ فاتح';
+  } else {
+    body.dataset.theme = 'light';
+    btn.textContent = '🌙 داكن';
+  }
+}
+
+// Toast
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.style.display='none', 3000);
+}
+
+// INIT
+renderWorlds();
+renderQuests();
+renderAchievements();
+renderSchedule();
+renderLevels();
+renderShop();
+updateUI();
+
+// Welcome
+setTimeout(()=>showToast("⚔️ مرحباً في أكاديمية Nexus! رحلتك تبدأ الآن ✨"), 1000);
+</script>
+</body>
+</html>

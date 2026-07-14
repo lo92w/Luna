@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>صندوق البطاقات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Markazi+Text:wght@500;700&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Tajawal', sans-serif;
+    min-height: 100vh;
+    background: radial-gradient(1200px 600px at 50% -10%, #1c3d36 0%, #16302B 55%, #102420 100%);
+    color: #F3E9D3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 16px 100px;
+  }
+  .mz { font-family: 'Markazi Text', serif; }
+  ::selection { background: #E3A72F; color: #16302B; }
+  button { font-family: 'Tajawal', sans-serif; }
+  input:focus, button:focus-visible { outline: 2px solid #E3A72F; outline-offset: 2px; }
+
+  header { text-align: center; margin-bottom: 22px; }
+  header .title { font-size: 40px; font-weight: 700; letter-spacing: .5px; }
+  header .stats { font-size: 14px; color: #B7C9C1; margin-top: 2px; }
+
+  .tabs { display: flex; gap: 6px; background: #0F211C; padding: 5px; border-radius: 14px; margin-bottom: 18px;
+    box-shadow: inset 0 0 0 1px rgba(227,167,47,0.15); }
+  .tab-btn { display: flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 10px; border: none;
+    cursor: pointer; font-weight: 700; font-size: 14px; background: transparent; color: #B7C9C1; transition: all .18s ease; }
+  .tab-btn.active { background: #E3A72F; color: #16302B; }
+
+  .error-banner { display: flex; align-items: center; gap: 8px; background: #5c2a2a; color: #f3d9d9; padding: 8px 14px;
+    border-radius: 10px; font-size: 13px; margin-bottom: 16px; max-width: 340px; text-align: center; animation: fadeIn .25s ease; }
+
+  .empty-state { text-align: center; padding: 50px 20px; border: 2px dashed rgba(227,167,47,0.35); border-radius: 18px; color: #B7C9C1; max-width: 500px; }
+
+  #deckView { width: 100%; max-width: 720px; }
+  .deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 18px; }
+  .deck-card { background: #F3E9D3; border-radius: 10px; padding: 8px; box-shadow: 0 6px 14px rgba(0,0,0,0.35); position: relative; transition: transform .15s ease; }
+  .deck-card:nth-child(3n+1) { transform: rotate(-1.4deg); }
+  .deck-card:nth-child(3n+2) { transform: rotate(0.9deg); }
+  .deck-card:nth-child(3n) { transform: rotate(-0.4deg); }
+  .deck-card:hover { transform: rotate(0deg) translateY(-4px); }
+  .status-badge { position: absolute; top: -6px; left: -6px; width: 26px; height: 26px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.4); z-index: 2; font-size: 13px; }
+  .thumb-frame { background: #fff8ea; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 6px; width: 100%; aspect-ratio: 1/1; }
+  .thumb-frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .deck-label { color: #16302B; font-size: 12.5px; font-weight: 700; margin-top: 6px; text-align: center; }
+  .deck-actions { display: flex; gap: 6px; margin-top: 8px; }
+  .deck-actions button { flex: 1; font-size: 11.5px; font-weight: 700; padding: 6px 4px; border-radius: 7px; border: none; cursor: pointer; }
+  .btn-toggle-known { background: #e7d9bc; color: #16302B; }
+  .btn-toggle-learning { background: #4F7942; color: #fff; }
+  .btn-delete { flex: 0 0 auto !important; padding: 6px 9px !important; background: #e7d9bc; color: #8a3b2b; }
+
+  #studyView { width: 100%; max-width: 420px; display: none; flex-direction: column; align-items: center; }
+  .pool-toggle { display: flex; gap: 6px; margin-bottom: 8px; }
+  .pool-btn { padding: 6px 12px; border-radius: 8px; border: 1px solid rgba(227,167,47,0.4); background: transparent;
+    color: #B7C9C1; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .pool-btn.active { background: #E3A72F; color: #16302B; }
+  .swipe-hint { font-size: 12px; color: #B7C9C1; margin-bottom: 10px; }
+  .study-stage { position: relative; width: 100%; aspect-ratio: 4/5; }
+  .stack-behind { position: absolute; inset: 0; background: #e9dcc0; border-radius: 20px; }
+  #studyCard { position: absolute; inset: 0; background: #F3E9D3; border-radius: 20px; box-shadow: 0 14px 30px rgba(0,0,0,0.45);
+    padding: 14px; display: flex; flex-direction: column; cursor: grab; touch-action: pan-y; user-select: none; }
+  #studyCard.dragging { cursor: grabbing; }
+  #studyCard .thumb-frame { flex: 1; border-radius: 12px; }
+  .study-caption { text-align: center; color: #16302B; font-weight: 800; font-size: 17px; margin-top: 10px; min-height: 24px; }
+  .swipe-tag { position: absolute; top: 22px; padding: 5px 12px; border-radius: 8px; font-weight: 900; font-size: 15px;
+    background: rgba(243,233,211,0.85); pointer-events: none; opacity: 0; z-index: 2; }
+  .swipe-tag.like { left: 18px; border: 3px solid #4F7942; color: #4F7942; transform: rotate(-14deg); }
+  .swipe-tag.nope { right: 18px; border: 3px solid #C97A2B; color: #C97A2B; transform: rotate(14deg); }
+  .study-buttons { display: flex; gap: 12px; margin-top: 18px; width: 100%; }
+  .study-buttons button { flex: 1; padding: 13px 0; border-radius: 12px; border: none; color: #fff; font-weight: 800;
+    font-size: 14.5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn-nope { background: #C97A2B; }
+  .btn-like { background: #4F7942; }
+  .empty-study { color: #B7C9C1; text-align: center; padding: 40px 10px; }
+
+  #addFab { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #E3A72F; color: #16302B;
+    border: none; border-radius: 999px; padding: 13px 24px; font-weight: 800; font-size: 15px; display: flex;
+    align-items: center; gap: 8px; box-shadow: 0 10px 24px rgba(227,167,47,0.4); cursor: pointer; }
+
+  #addModalOverlay { position: fixed; inset: 0; background: rgba(10,20,17,0.72); display: none; align-items: center;
+    justify-content: center; z-index: 50; padding: 16px; }
+  #addModal { background: #F3E9D3; color: #16302B; border-radius: 18px; padding: 22px; width: 100%; max-width: 400px;
+    max-height: 85vh; overflow-y: auto; animation: fadeIn .25s ease; }
+  #addModal .modal-title { font-size: 24px; font-weight: 700; margin-bottom: 14px; }
+  .dropzone { border: 2px dashed rgba(22,48,43,0.3); border-radius: 12px; height: 160px; display: flex; align-items: center;
+    justify-content: center; cursor: pointer; overflow: hidden; margin-bottom: 14px; background: #fff8ea; color: #7a6f57; text-align: center; }
+  #pendingGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px; margin-bottom: 10px; }
+  .pending-thumb { position: relative; }
+  .pending-thumb .thumb-frame { aspect-ratio: 1/1; border-radius: 8px; }
+  .pending-remove { position: absolute; top: -6px; left: -6px; width: 20px; height: 20px; border-radius: 50%; border: none;
+    background: #8a3b2b; color: #fff; font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; line-height: 1;}
+  .pending-add-more { aspect-ratio: 1/1; border-radius: 8px; border: 2px dashed rgba(22,48,43,0.3); background: #fff8ea;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; color: #7a6f57; font-size: 18px; }
+  #pendingCount { font-size: 12px; color: #7a6f57; margin-bottom: 12px; }
+  #labelInput { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(22,48,43,0.25); font-size: 14px;
+    font-family: 'Tajawal', sans-serif; margin-bottom: 12px; background: #fff; display: none; }
+  .known-check { display: flex; align-items: center; gap: 8px; font-size: 13.5px; margin-bottom: 18px; cursor: pointer; }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-actions button { flex: 1; padding: 10px 0; border-radius: 10px; font-weight: 700; cursor: pointer; }
+  #cancelBtn { border: 1px solid rgba(22,48,43,0.25); background: transparent; color: #16302B; }
+  #saveBtn { border: none; background: #c8bfa4; color: #fff; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  #saveBtn.ready { background: #4F7942; cursor: pointer; }
+  #saveBtn:disabled { cursor: not-allowed; }
+
+  .spin { animation: spin 1s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .fade-in { animation: fadeIn .25s ease; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title mz">صندوق البطاقات</div>
+  <div class="stats" id="statsLine">أضف أول صورة تبدأ فيها</div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" id="tabDeck" onclick="switchView('deck')">🗂️ مجموعتي</button>
+  <button class="tab-btn" id="tabStudy" onclick="switchView('study')">📖 مذاكرة</button>
+</div>
+
+<div id="errorBanner" class="error-banner" style="display:none;"></div>
+
+<div id="deckView">
+  <div id="deckEmpty" class="empty-state">
+    <div style="font-size:34px; margin-bottom:10px; opacity:.7;">🖼️</div>
+    <div style="font-size:15px;">ما فيه بطاقات لسا. اضغط زر الإضافة تحت.</div>
+  </div>
+  <div id="deckGrid" class="deck-grid" style="display:none;"></div>
+</div>
+
+<div id="studyView">
+  <div class="pool-toggle">
+    <button class="pool-btn active" id="poolLearning" onclick="setStudyPool('learning')">لسا أتعلمها (0)</button>
+    <button class="pool-btn" id="poolAll" onclick="setStudyPool('all')">الكل (0)</button>
+  </div>
+
+  <div id="studyEmpty" class="empty-study" style="display:none;"></div>
+
+  <div id="studyContent" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+    <div class="swipe-hint">اسحب البطاقة يمين = أعرفها · يسار = لسا ما أعرفها</div>
+    <div class="study-stage">
+      <div class="stack-behind" style="transform: rotate(-3deg) scale(0.96); top:6px;"></div>
+      <div class="stack-behind" style="transform: rotate(2deg) scale(0.98); top:3px;"></div>
+      <div id="studyCard">
+        <div class="swipe-tag like" id="likeTag">أعرفها ✓</div>
+        <div class="swipe-tag nope" id="nopeTag">لسا ✗</div>
+        <div class="thumb-frame"><img id="studyImg" src="" alt="بطاقة" draggable="false" /></div>
+        <div class="study-caption" id="studyCaption">اضغط للكشف</div>
+      </div>
+    </div>
+    <div class="study-buttons">
+      <button class="btn-nope" onclick="triggerSwipe('left')">✗ لسا ما أعرفها</button>
+      <button class="btn-like" onclick="triggerSwipe('right')">✓ أعرفها</button>
+    </div>
+  </div>
+</div>
+
+<button id="addFab" onclick="openAddModal()">＋ أضف صور</button>
+
+<div id="addModalOverlay" onclick="closeIfBackdrop(event)">
+  <div id="addModal" onclick="event.stopPropagation()">
+    <div class="modal-title mz">بطاقات جديدة</div>
+    <input type="file" id="fileInput" accept="image/*" multiple hidden onchange="handleFiles(this.files); this.value='';" />
+
+    <div class="dropzone" id="dropzoneEmpty" onclick="document.getElementById('fileInput').click()">
+      <div>
+        <div style="font-size:26px;">🖼️➕</div>
+        <div style="font-size:13px; margin-top:4px;">اضغط لاختيار صورة أو أكثر</div>
+      </div>
+    </div>
+
+    <div id="pendingGrid" style="display:none;"></div>
+    <div id="pendingCount" style="display:none;"></div>
+
+    <input type="text" id="labelInput" placeholder="اسم البطاقة (اختياري)" />
+
+    <label class="known-check">
+      <input type="checkbox" id="knownCheck" />
+      أعرفها بالفعل (غير كذا بتنحط "لسا أتعلمها")
+    </label>
+
+    <div class="modal-actions">
+      <button id="cancelBtn" onclick="closeAddModal()">إلغاء</button>
+      <button id="saveBtn" disabled onclick="confirmAdd()">حفظ البطاقة</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- storage ----------
+const STORAGE_KEY = 'flashcards-deck-v1';
+let cards = [];
+try {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  cards = raw ? JSON.parse(raw) : [];
+  if (!Array.isArray(cards)) cards = [];
+} catch (e) {
+  cards = [];
+}
+
+function persist() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+    return true;
+  } catch (e) {
+    const isQuota = e && (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014);
+    showError(isQuota
+      ? 'مساحة التخزين بالمتصفح تعبت — احذف بطاقات قديمة عشان تفضى مساحة.'
+      : ('صار خلل بالحفظ: ' + (e && e.message ? e.message : e)));
+    return false;
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBanner');
+  el.textContent = msg;
+  el.style.display = 'flex';
+  clearTimeout(showError._t);
+  showError._t = setTimeout(() => { el.style.display = 'none'; }, 6000);
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+// ---------- image compression (adaptive, never crops) ----------
+const ENCODE_ATTEMPTS = [
+  { maxDim: 700, quality: 0.75 },
+  { maxDim: 550, quality: 0.65 },
+  { maxDim: 420, quality: 0.55 },
+  { maxDim: 320, quality: 0.5 },
+  { maxDim: 240, quality: 0.45 },
+];
+const TARGET_BYTES = 180 * 1024; // keep each image small — localStorage quota is shared across the whole site
+
+function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('تعذّرت قراءة الملف'));
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('تعذّر فتح الصورة'));
+      img.onload = () => resolve(img);
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function approxBytesFromDataUrl(dataUrl) {
+  const commaIdx = dataUrl.indexOf(',');
+  const base64 = commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : dataUrl;
+  return Math.round((base64.length * 3) / 4);
+}
+
+function encodeAt(img, maxDim, quality) {
+  let width = img.naturalWidth, height = img.naturalHeight;
+  if (width > maxDim || height > maxDim) {
+    if (width > height) { height = Math.round(height * maxDim / width); width = maxDim; }
+    else { width = Math.round(width * maxDim / height); height = maxDim; }
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = width; canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, width, height);
+  return canvas.toDataURL('image/jpeg', quality);
+}
+
+async function resizeImage(file) {
+  const img = await loadImageFromFile(file);
+  let last = null;
+  for (const a of ENCODE_ATTEMPTS) {
+    const dataUrl = encodeAt(img, a.maxDim, a.quality);
+    last = dataUrl;
+    if (approxBytesFromDataUrl(dataUrl) <= TARGET_BYTES) return dataUrl;
+  }
+  return last;
+}
+
+// ---------- view state ----------
+let currentView = 'deck';
+let studyPool = 'learning';
+let studyIdx = 0;
+let revealed = false;
+let pendingImages = []; // [{id, image}]
+let busy = false;
+
+function switchView(view) {
+  currentView = view;
+  document.getElementById('tabDeck').classList.toggle('active', view === 'deck');
+  document.getElementById('tabStudy').classList.toggle('active', view === 'study');
+  document.getElementById('deckView').style.display = view === 'deck' ? 'block' : 'none';
+  document.getElementById('studyView').style.display = view === 'study' ? 'flex' : 'none';
+  studyIdx = 0; revealed = false;
+  renderAll();
+}
+
+function setStudyPool(pool) {
+  studyPool = pool;
+  studyIdx = 0; revealed = false;
+  document.getElementById('poolLearning').classList.toggle('active', pool === 'learning');
+  document.getElementById('poolAll').classList.toggle('active', pool === 'all');
+  renderStudy();
+}
+
+// ---------- render ----------
+function renderAll() {
+  renderStats();
+  if (currentView === 'deck') renderDeck();
+  else renderStudy();
+}
+
+function renderStats() {
+  const known = cards.filter(c => c.status === 'known').length;
+  const learning = cards.length - known;
+  document.getElementById('statsLine').textContent = cards.length === 0
+    ? 'أضف أول صورة تبدأ فيها'
+    : `${cards.length} بطاقة · ${known} أعرفها · ${learning} لسا أتعلمها`;
+}
+
+function renderDeck() {
+  const grid = document.getElementById('deckGrid');
+  const empty = document.getElementById('deckEmpty');
+  if (cards.length === 0) {
+    grid.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  grid.style.display = 'grid';
+  grid.innerHTML = cards.map(c => `
+    <div class="deck-card">
+      <div class="status-badge" style="background:${c.status === 'known' ? '#4F7942' : '#C97A2B'};">
+        ${c.status === 'known' ? '✓' : '↻'}
+      </div>
+      <div class="thumb-frame"><img src="${c.image}" alt="${escapeHtml(c.label || 'بطاقة')}" /></div>
+      ${c.label ? `<div class="deck-label">${escapeHtml(c.label)}</div>` : ''}
+      <div class="deck-actions">
+        <button class="${c.status === 'known' ? 'btn-toggle-known' : 'btn-toggle-learning'}" onclick="toggleStatus('${c.id}')">
+          ${c.status === 'known' ? 'أعرفها' : 'أعلّمها'}
+        </button>
+        <button class="btn-delete" onclick="deleteCard('${c.id}')">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function getPool() {
+  return studyPool === 'learning' ? cards.filter(c => c.status === 'learning') : cards;
+}
+
+function renderStudy() {
+  const learning = cards.filter(c => c.status === 'learning');
+  document.getElementById('poolLearning').textContent = `لسا أتعلمها (${learning.length})`;
+  document.getElementById('poolAll').textContent = `الكل (${cards.length})`;
+
+  const pool = getPool();
+  const emptyEl = document.getElementById('studyEmpty');
+  const contentEl = document.getElementById('studyContent');
+
+  if (pool.length === 0) {
+    contentEl.style.display = 'none';
+    emptyEl.style.display = 'block';
+    emptyEl.textContent = studyPool === 'learning'
+      ? 'ما فيه بطاقات لسا تتعلمها 🎉 كلها صايرة عندك معروفة.'
+      : 'أضف بطاقات أول عشان تبدأ المذاكرة.';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  contentEl.style.display = 'flex';
+
+  const current = pool[studyIdx % pool.length];
+  document.getElementById('studyImg').src = current.image;
+  document.getElementById('studyImg').alt = current.label || 'بطاقة';
+  document.getElementById('studyCaption').textContent = revealed ? (current.label || 'بدون اسم') : 'اضغط للكشف';
+}
+
+// ---------- mutations ----------
+function toggleStatus(id) {
+  const c = cards.find(c => c.id === id);
+  if (!c) return;
+  c.status = c.status === 'known' ? 'learning' : 'known';
+  if (persist()) renderAll();
+  else { c.status = c.status === 'known' ? 'learning' : 'known'; } // revert on failure
+}
+
+function deleteCard(id) {
+  const idx = cards.findIndex(c => c.id === id);
+  if (idx === -1) return;
+  const removed = cards.splice(idx, 1)[0];
+  if (!persist()) cards.splice(idx, 0, removed); // revert on failure
+  renderAll();
+}
+
+// ---------- add modal ----------
+function openAddModal() {
+  pendingImages = [];
+  document.getElementById('labelInput').value = '';
+  document.getElementById('knownCheck').checked = false;
+  renderPending();
+  document.getElementById('addModalOverlay').style.display = 'flex';
+}
+
+function closeAddModal() {
+  if (busy) return;
+  document.getElementById('addModalOverlay').style.display = 'none';
+}
+
+function closeIfBackdrop(e) {
+  if (e.target.id === 'addModalOverlay') closeAddModal();
+}
+
+async function handleFiles(fileList) {
+  const files = Array.from(fileList || []).filter(f => f.type.startsWith('image/'));
+  if (!files.length) return;
+  busy = true;
+  renderPending();
+  const results = [];
+  for (const file of files) {
+    try {
+      const image = await resizeImage(file);
+      results.push({ id: uid(), image });
+    } catch (e) {
+      showError('صورة وحدة ما انقرت: ' + (e && e.message ? e.message : e));
+    }
+  }
+  pendingImages = pendingImages.concat(results);
+  busy = false;
+  renderPending();
+}
+
+function removePending(id) {
+  pendingImages = pendingImages.filter(p => p.id !== id);
+  renderPending();
+}
+
+function renderPending() {
+  const dropzoneEmpty = document.getElementById('dropzoneEmpty');
+  const grid = document.getElementById('pendingGrid');
+  const countEl = document.getElementById('pendingCount');
+  const labelInput = document.getElementById('labelInput');
+  const saveBtn = document.getElementById('saveBtn');
+
+  if (pendingImages.length === 0 && !busy) {
+    dropzoneEmpty.style.display = 'flex';
+    grid.style.display = 'none';
+    countEl.style.display = 'none';
+  } else {
+    dropzoneEmpty.style.display = 'none';
+    grid.style.display = 'grid';
+    countEl.style.display = 'block';
+    grid.innerHTML = pendingImages.map(p => `
+      <div class="pending-thumb">
+        <div class="thumb-frame"><img src="${p.image}" alt="" /></div>
+        <button class="pending-remove" onclick="removePending('${p.id}')">✕</button>
+      </div>
+    `).join('') + `<div class="pending-add-more" onclick="document.getElementById('fileInput').click()">${busy ? '<span class="spin">⏳</span>' : '＋'}</div>`;
+    countEl.textContent = `${pendingImages.length} صورة مختارة`;
+  }
+
+  labelInput.style.display = pendingImages.length === 1 ? 'block' : 'none';
+
+  saveBtn.disabled = pendingImages.length === 0 || busy;
+  saveBtn.classList.toggle('ready', pendingImages.length > 0 && !busy);
+  saveBtn.textContent = pendingImages.length > 1 ? `حفظ ${pendingImages.length} بطاقات` : 'حفظ البطاقة';
+}
+
+function confirmAdd() {
+  if (!pendingImages.length) return;
+  const single = pendingImages.length === 1;
+  const label = document.getElementById('labelInput').value.trim();
+  const known = document.getElementById('knownCheck').checked;
+
+  const newCards = pendingImages.map(p => ({
+    id: p.id,
+    image: p.image,
+    label: single ? label : '',
+    status: known ? 'known' : 'learning',
+    createdAt: Date.now(),
+  }));
+
+  cards = [...newCards, ...cards];
+  if (persist()) {
+    document.getElementById('addModalOverlay').style.display = 'none';
+    renderAll();
+  } else {
+    cards = cards.slice(newCards.length); // revert on failure, keep modal open so user can retry
+  }
+}
+
+// ---------- swipe (study mode) ----------
+const studyCard = document.getElementById('studyCard');
+const likeTag = document.getElementById('likeTag');
+const nopeTag = document.getElementById('nopeTag');
+const SWIPE_THRESHOLD = 110;
+let dragging = false, dragX = 0, startX = 0, exiting = null, pointerId = null;
+
+function setCardTransform() {
+  if (exiting === 'right') {
+    studyCard.style.transition = 'transform .26s ease-in, opacity .26s ease-in';
+    studyCard.style.transform = 'translateX(640px) rotate(24deg)';
+    studyCard.style.opacity = '0';
+  } else if (exiting === 'left') {
+    studyCard.style.transition = 'transform .26s ease-in, opacity .26s ease-in';
+    studyCard.style.transform = 'translateX(-640px) rotate(-24deg)';
+    studyCard.style.opacity = '0';
+  } else {
+    studyCard.style.transition = dragging ? 'none' : 'transform .28s cubic-bezier(.2,.8,.3,1)';
+    studyCard.style.transform = `translateX(${dragX}px) rotate(${dragX / 18}deg)`;
+    studyCard.style.opacity = '1';
+  }
+  likeTag.style.opacity = Math.min(Math.max(dragX / SWIPE_THRESHOLD, 0), 1);
+  nopeTag.style.opacity = Math.min(Math.max(-dragX / SWIPE_THRESHOLD, 0), 1);
+}
+
+studyCard.addEventListener('pointerdown', (e) => {
+  if (exiting || getPool().length === 0) return;
+  dragging = true;
+  startX = e.clientX;
+  pointerId = e.pointerId;
+  studyCard.classList.add('dragging');
+  studyCard.setPointerCapture?.(pointerId);
+});
+studyCard.addEventListener('pointermove', (e) => {
+  if (!dragging) return;
+  dragX = e.clientX - startX;
+  setCardTransform();
+});
+function endDrag() {
+  if (!dragging) return;
+  dragging = false;
+  studyCard.classList.remove('dragging');
+  if (dragX > SWIPE_THRESHOLD) triggerSwipe('right');
+  else if (dragX < -SWIPE_THRESHOLD) triggerSwipe('left');
+  else { dragX = 0; setCardTransform(); }
+}
+studyCard.addEventListener('pointerup', endDrag);
+studyCard.addEventListener('pointerleave', endDrag);
+studyCard.addEventListener('click', () => {
+  if (!dragging && Math.abs(dragX) < 4 && !exiting) {
+    revealed = !revealed;
+    renderStudy();
+  }
+});
+
+function triggerSwipe(dir) {
+  const pool = getPool();
+  if (!pool.length || exiting) return;
+  exiting = dir;
+  setCardTransform();
+  const current = pool[studyIdx % pool.length];
+  const status = dir === 'right' ? 'known' : 'learning';
+  setTimeout(() => {
+    const c = cards.find(c => c.id === current.id);
+    if (c) { c.status = status; persist(); }
+    exiting = null;
+    dragX = 0;
+    revealed = false;
+    const newPool = getPool();
+    studyIdx = newPool.length ? (studyIdx + 1) % newPool.length : 0;
+    setCardTransform();
+    renderAll();
+  }, 240);
+}
+
+// ---------- init ----------
+renderAll();
+</script>
+</body>
+</html>
